@@ -1,0 +1,14 @@
+CREATE TABLE pump_series (id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, description TEXT);
+CREATE TABLE pump_models (id TEXT PRIMARY KEY, series_id TEXT NOT NULL REFERENCES pump_series(id), code TEXT NOT NULL UNIQUE, name TEXT NOT NULL);
+CREATE TABLE motors (id TEXT PRIMARY KEY, power_kw NUMERIC NOT NULL, voltage_v NUMERIC, phase INTEGER, frequency_hz NUMERIC, speed_rpm NUMERIC);
+CREATE TABLE pump_configurations (id TEXT PRIMARY KEY, model_id TEXT NOT NULL REFERENCES pump_models(id), code TEXT NOT NULL UNIQUE, motor_id TEXT NOT NULL REFERENCES motors(id), seal TEXT, connection TEXT, weight_kg NUMERIC, active BOOLEAN NOT NULL DEFAULT TRUE);
+CREATE TABLE dimensions (id TEXT PRIMARY KEY, configuration_id TEXT NOT NULL REFERENCES pump_configurations(id), length_mm NUMERIC, width_mm NUMERIC, height_mm NUMERIC, weight_kg NUMERIC);
+CREATE TABLE performance_curves (id TEXT PRIMARY KEY, configuration_id TEXT NOT NULL REFERENCES pump_configurations(id), kind TEXT NOT NULL, unit TEXT NOT NULL, speed_rpm NUMERIC NOT NULL, frequency_hz NUMERIC NOT NULL, source_id TEXT);
+CREATE TABLE curve_points (id TEXT PRIMARY KEY, curve_id TEXT NOT NULL REFERENCES performance_curves(id) ON DELETE CASCADE, q NUMERIC NOT NULL, value NUMERIC NOT NULL);
+CREATE TABLE engineering_rules (id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, kind TEXT NOT NULL, severity TEXT NOT NULL, enabled BOOLEAN NOT NULL DEFAULT TRUE, parameters_json TEXT NOT NULL DEFAULT '{}');
+CREATE TABLE source_references (id TEXT PRIMARY KEY, document_id TEXT NOT NULL, page INTEGER, table_name TEXT, region TEXT, excerpt TEXT);
+CREATE TABLE audit_events (id TEXT PRIMARY KEY, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, action TEXT NOT NULL, actor_id TEXT NOT NULL, timestamp TEXT NOT NULL, before_json TEXT, after_json TEXT);
+CREATE INDEX idx_model_series ON pump_models(series_id);
+CREATE INDEX idx_configuration_model ON pump_configurations(model_id);
+CREATE INDEX idx_curve_configuration ON performance_curves(configuration_id);
+CREATE INDEX idx_curve_points_curve_q ON curve_points(curve_id,q);
