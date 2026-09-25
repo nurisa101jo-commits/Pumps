@@ -20,3 +20,7 @@ The API is internal to the company's own platform. It is not a SPAIX integration
 - Engineer workflow: PATCH candidate -> approve candidate -> explicit publish candidate.
 
 - `importScope` may be `catalog`, `curves`, `dimensions`, `motors`, `materials`, `seals`, or `configurations`. Targeted imports are scope-validated; data outside the requested scope is rejected before candidate persistence.
+
+
+### Full catalog publication
+For a reviewed and approved full catalog candidate, publication may use `entityType: "catalog"`. This publishes the Series together with its Models, Configurations, compatible Motors, Dimensions and structured Curves in one transactional database operation. It is never performed automatically by AI.
