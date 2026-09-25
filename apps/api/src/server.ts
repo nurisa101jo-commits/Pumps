@@ -30,7 +30,7 @@ async function start(){
  registerCatalogRoutes(app,catalogStore,engineeringStore);
  const selectionCatalog=[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries((engineeringStore.links.get(c.id)??[]).map(link=>[link.kind,[...(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===link.kind).map(x=>x.optionId)]])),rules:[...catalogStore.rules.values()].filter(rule=>rule.enabled&&(!rule.configurationIds||rule.configurationIds.includes(c.id))),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));
  registerProjectRoutes(app,projectStore,selectionCatalog);
- app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.5.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
+ app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.6.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
  
 
 
