@@ -1,0 +1,10 @@
+export type PumpSeries={id:string;code:string;name:string;description?:string};
+export type PumpModel={id:string;seriesId:string;code:string;name:string};
+export type Motor={id:string;powerKw:number;voltageV?:number;phase?:1|3;frequencyHz?:50|60;speedRpm?:number};
+export type CurvePoint={q:number;head:number;efficiency?:number;powerKw?:number;npshr?:number};
+export type PerformanceCurve={id:string;modelId:string;speedRpm:number;frequencyHz:number;points:CurvePoint[]};
+export type DimensionSet={id:string;modelId:string;configurationId:string;lengthMm?:number;widthMm?:number;heightMm?:number;weightKg?:number};
+export type PumpConfiguration={id:string;modelId:string;code:string;motorId:string;dimensionSetId?:string;curveId?:string;materials?:Record<string,string>;seal?:string;connection?:string};
+export type SelectionRequest={dutyPoints:Array<{q:number;head:number;label?:string}>;fluid?:{name?:string;temperatureC?:number;viscosityCst?:number;densityKgM3?:number};constraints?:{minEfficiency?:number;maxNpshr?:number;allowedConfigurationIds?:string[]}};
+export type SelectionCandidate={configurationId:string;modelId:string;motorId:string;score:number;dutyResults:Array<{q:number;requiredHead:number;availableHead:number;headError:number;efficiency?:number;npshr?:number}>};
+export type SelectionResult={candidates:SelectionCandidate[];warnings:string[];engineVersion:string};
