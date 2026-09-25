@@ -4,9 +4,9 @@ import {randomUUID} from "node:crypto";
 
 const tableFor=(kind:EngineeringOptionKind)=>({material:"materials",seal:"seals",connection:"connections",impeller:"impellers",accessory:"accessories"} as const)[kind];
 
-export type EngineeringOptionStore={options:Map<EngineeringOptionKind,Map<string,EngineeringOption>>;pool?:Pool};
+export type EngineeringOptionStore={options:Map<EngineeringOptionKind,Map<string,EngineeringOption>>;links:Map<string,Array<{kind:EngineeringOptionKind;optionId:string}>>;pool?:Pool};
 export function createEngineeringOptionStore(pool?:Pool):EngineeringOptionStore{
-  return{options:new Map(["material","seal","connection","impeller","accessory"].map(k=>[k,new Map()] as const)),pool};
+  return{options:new Map(["material","seal","connection","impeller","accessory"].map(k=>[k,new Map()] as const)),links:new Map(),pool};
 }
 export async function loadEngineeringOptions(store:EngineeringOptionStore){
   if(!store.pool)return;
