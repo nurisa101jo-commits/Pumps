@@ -6,7 +6,7 @@ import type {CatalogConfiguration} from "@pumps/selection-engine";
 
 const makeId=()=>crypto.randomUUID();
 
-export function registerProjectRoutes(app:FastifyInstance,store=createProjectStore(),catalog:CatalogConfiguration[]=[]){
+export function registerProjectRoutes(app:FastifyInstance,store=createProjectStore(),catalog:CatalogConfiguration[]|(()=>CatalogConfiguration[])=[]){\n  const getCatalog=()=>typeof catalog==="function"?catalog():catalog;
   app.get("/api/v1/projects",async()=>[...store.projects.values()]);
   app.post("/api/v1/projects",async(req,reply)=>{
     try{
@@ -32,7 +32,7 @@ export function registerProjectRoutes(app:FastifyInstance,store=createProjectSto
     if(!project)return reply.code(404).send({error:"Project not found"});
     const selection=[...store.selections.values()].filter(x=>x.projectId===projectId).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
     if(!selection)return reply.code(404).send({error:"No validated selection exists for this project"});
-    const configuration=catalog.find(x=>x.id===selection.configurationId);
+    const configuration=getCatalog().find(x=>x.id===selection.configurationId);
     if(!configuration)return reply.code(404).send({error:"Selected configuration is no longer available"});
     const esc=(value:unknown)=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     const points=selection.dutyResults??[];
@@ -43,7 +43,7 @@ export function registerProjectRoutes(app:FastifyInstance,store=createProjectSto
   app.post("/api/v1/projects/:projectId/selection",async(req,reply)=>{
     try{
       const projectId=(req.params as any).projectId;
-      const body=req.body as any; const selection:ProjectSelection={id:makeId(),projectId,createdAt:new Date().toISOString(),...(body)}; const points=[...store.dutyPoints.values()].filter(x=>x.projectId===projectId); const result=selectFromCatalog({...body.request,dutyPoints:body.request?.dutyPoints??points.map(x=>({q:x.q,head:x.head,label:x.label})),},catalog); const candidate=result.candidates.find(x=>x.configurationId===selection.configurationId); if(!candidate)throw new Error("Selected configuration is not valid for the project duty points"); const config=catalog.find(x=>x.id===selection.configurationId)!; const allowed=new Set(Object.values(config.optionIds??{}).flat()); for(const optionId of selection.selectedOptionIds??[])if(!allowed.has(optionId))throw new Error("Selected option is not compatible with the configuration"); selection.engineVersion=result.engineVersion;selection.dutyResults=result.candidates.find(x=>x.configurationId===selection.configurationId)?.dutyResults;selection.warnings=result.warnings;
+      const body=req.body as any; const selection:ProjectSelection={id:makeId(),projectId,createdAt:new Date().toISOString(),...(body)}; const points=[...store.dutyPoints.values()].filter(x=>x.projectId===projectId); const result=selectFromCatalog({...body.request,dutyPoints:body.request?.dutyPoints??points.map(x=>({q:x.q,head:x.head,label:x.label})),},getCatalog()); const candidate=result.candidates.find(x=>x.configurationId===selection.configurationId); if(!candidate)throw new Error("Selected configuration is not valid for the project duty points"); const config=getCatalog().find(x=>x.id===selection.configurationId)!; const allowed=new Set(Object.values(config.optionIds??{}).flat()); for(const optionId of selection.selectedOptionIds??[])if(!allowed.has(optionId))throw new Error("Selected option is not compatible with the configuration"); selection.engineVersion=result.engineVersion;selection.dutyResults=result.candidates.find(x=>x.configurationId===selection.configurationId)?.dutyResults;selection.warnings=result.warnings;
       return reply.code(201).send(await selectConfiguration(store,selection));
     }catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid selection"})}
   });
