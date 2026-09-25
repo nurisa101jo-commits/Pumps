@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS ingestion_jobs (id TEXT PRIMARY KEY,source_document_id TEXT REFERENCES product_documents(id),source_name TEXT NOT NULL,source_type TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,created_by TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS ingestion_candidates (id TEXT PRIMARY KEY,job_id TEXT NOT NULL REFERENCES ingestion_jobs(id) ON DELETE CASCADE,payload_json TEXT NOT NULL,confidence NUMERIC NOT NULL,status TEXT NOT NULL,sources_json TEXT NOT NULL DEFAULT '[]',conflicts_json TEXT NOT NULL DEFAULT '[]',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS approval_records (id TEXT PRIMARY KEY,candidate_id TEXT NOT NULL REFERENCES ingestion_candidates(id) ON DELETE CASCADE,approved_by TEXT NOT NULL,approved_at TEXT NOT NULL,confirmation BOOLEAN NOT NULL,approval_note TEXT);
+CREATE INDEX IF NOT EXISTS idx_ingestion_candidate_job ON ingestion_candidates(job_id);
