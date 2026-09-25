@@ -15,3 +15,8 @@ Imported values can retain document, page, table and region references so an eng
 
 ## Rules
 Rules are independent from product data and cover compatibility, limits, application restrictions and configuration availability.
+
+
+## AI extraction contract
+
+AI catalog extraction is structured around Series -> Model -> Configuration. A configuration owns its compatible motor, dimensions, curves and engineering options. Curve data is numeric (Q/value points with speed/frequency metadata), not image-only. Extraction is validated before review; validation errors become explicit conflicts and do not publish data.
