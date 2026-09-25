@@ -15,7 +15,8 @@
     ".": "./dist/schema.js",
     "./catalog-service": "./dist/catalog-service.js",
     "./catalog-validation": "./dist/catalog-validation.js",
-    "./project-service": "./dist/project-service.js"
+    "./project-service": "./dist/project-service.js",
+    "./postgres": "./dist/postgres.js"
   },
   "dependencies": {
     "@pumps/domain": "workspace:*",
