@@ -7,3 +7,4 @@ export * from "./file-ingestion.js";
 export * from "./http-provider.js";
 export * from "./catalog-schema.js";
 export * from "./catalog-validator.js";
+export * from "./targeted-import.js";
