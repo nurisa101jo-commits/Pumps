@@ -10,6 +10,7 @@ export async function runMigrations(pool:Pool,options:MigrationRunnerOptions){
  const applied=new Set<string>((await pool.query("SELECT version FROM schema_migrations")).rows.map((x:any)=>x.version));
  for(const file of files){
   const version=file.split("_",1)[0];
+  if(!version)continue;
   if(applied.has(version))continue;
   const sql=await readFile(join(options.directory,file),"utf8");
   const client=await pool.connect();
