@@ -5,10 +5,10 @@ export type ProjectStore={
   projects:Map<string,Project>;
   dutyPoints:Map<string,ProjectDutyPoint>;
   selections:Map<string,ProjectSelection>;
-  pool?:Pool;
+  pool?:Pool | undefined;
 };
 
-export function createProjectStore(pool?:Pool):ProjectStore{
+export function createProjectStore(pool?:Pool | undefined):ProjectStore{
   return{projects:new Map(),dutyPoints:new Map(),selections:new Map(),pool};
 }
 
