@@ -7,7 +7,7 @@ type Curve={id:string;kind:"head"|"efficiency"|"power"|"npsh";unit:string;speedR
 type Option={id:string;kind:"material"|"seal"|"connection"|"impeller"|"accessory";code:string;name:string};
 type Config={id:string;code:string;modelId:string;model?:Model|null;motor?:{id:string;powerKw:number;voltageV?:number;phase?:number;frequencyHz?:number;speedRpm?:number}|null;dimensions?:{lengthMm?:number;widthMm?:number;heightMm?:number;weightKg?:number}|null;seal?:string;connection?:string;materials?:Record<string,string>;options?:Option[];curves:Curve[]};
 const API=(import.meta.env.VITE_API_URL??"http://localhost:4000").replace(/\/$/,"");
-const get=async<T>(path:string):Promise<T>=>{const r=await fetch(API+path);if(!r.ok)throw new Error(await r.text());return r.json()};
+async function get<T>(path:string):Promise<T>{const r=await fetch(API+path);if(!r.ok)throw new Error(await r.text());return r.json()}
 function App(){
 const[step,setStep]=useState(1),[loading,setLoading]=useState(true),[error,setError]=useState("");
 const[series,setSeries]=useState<Series[]>([]),[models,setModels]=useState<Model[]>([]),[configs,setConfigs]=useState<Config[]>([]);
