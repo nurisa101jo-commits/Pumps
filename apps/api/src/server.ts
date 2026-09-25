@@ -26,7 +26,7 @@ const publicationStore=createPublicationStore(pool);
 let databaseReady=false;
 
 async function start(){
- if(pool){await pingDatabase(pool);if(process.env.RUN_MIGRATIONS==="true")await runMigrations(pool,{directory:process.env.MIGRATIONS_DIR??"./packages/db/src/migrations"});await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);await loadDocuments(documentStore);await loadIngestion(ingestionStore);await loadPublications(publicationStore);databaseReady=true}
+ if(pool){await pingDatabase(pool);if(process.env.RUN_MIGRATIONS==="true")await runMigrations(pool,{directory:process.env.MIGRATIONS_DIR??"./packages/db/dist/migrations"});await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);await loadDocuments(documentStore);await loadIngestion(ingestionStore);await loadPublications(publicationStore);databaseReady=true}
  registerCatalogRoutes(app,catalogStore,engineeringStore);
  const buildSelectionCatalog=()=>[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries(["material","seal","connection","impeller","accessory"].map(kind=>[kind,(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===kind).map(x=>x.optionId)])),rules:[...catalogStore.rules.values()].filter(rule=>rule.enabled&&(!rule.configurationIds||rule.configurationIds.includes(c.id))),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));
  registerProjectRoutes(app,projectStore,buildSelectionCatalog);
