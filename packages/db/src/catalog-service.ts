@@ -1,9 +1,10 @@
 import type {AuditEvent} from "@pumps/domain/audit";
 import type {Pool} from "pg";
 import {randomUUID} from "node:crypto";
+import type {EngineeringRule} from "@pumps/domain/rules";
 
-export type CatalogStore={series:Map<string,any>;models:Map<string,any>;motors:Map<string,any>;configurations:Map<string,any>;curves:Map<string,any>;dimensions:Map<string,any>;audit:AuditEvent[];pool?:Pool};
-export function createCatalogStore(pool?:Pool):CatalogStore{return{series:new Map(),models:new Map(),motors:new Map(),configurations:new Map(),curves:new Map(),dimensions:new Map(),audit:[],pool}}
+export type CatalogStore={series:Map<string,any>;models:Map<string,any>;motors:Map<string,any>;configurations:Map<string,any>;curves:Map<string,any>;dimensions:Map<string,any>;rules:Map<string,EngineeringRule>;audit:AuditEvent[];pool?:Pool};
+export function createCatalogStore(pool?:Pool):CatalogStore{return{series:new Map(),models:new Map(),motors:new Map(),configurations:new Map(),curves:new Map(),dimensions:new Map(),rules:new Map(),audit:[],pool}}
 export function assertUnique(store:CatalogStore,collection:keyof Pick<CatalogStore,"series"|"models"|"motors"|"configurations"|"curves"|"dimensions">,field:string,value:unknown,ignoreId?:string){for(const [id,item] of store[collection])if(id!==ignoreId&&item[field]===value)throw new Error("Duplicate "+collection+"."+field+": "+String(value))}
 export function recordAudit(store:CatalogStore,event:AuditEvent){store.audit.push(event)}
 export async function persistCatalogItem(store:CatalogStore,kind:"series"|"model"|"motor"|"configuration"|"dimension"|"curve",item:any){
@@ -24,5 +25,5 @@ export async function loadCatalog(store:CatalogStore){
  for(const x of (await q.query("SELECT id,power_kw AS \"powerKw\",voltage_v AS \"voltageV\",phase,frequency_hz AS \"frequencyHz\",speed_rpm AS \"speedRpm\" FROM motors")).rows)store.motors.set(x.id,x);
  for(const x of (await q.query("SELECT id,model_id AS \"modelId\",code,motor_id AS \"motorId\",seal,connection,materials_json,weight_kg AS \"weightKg\",active FROM pump_configurations")).rows){x.materials=JSON.parse(x.materials_json??"{}");delete x.materials_json;store.configurations.set(x.id,x)}
  for(const x of (await q.query("SELECT id,configuration_id AS \"configurationId\",length_mm AS \"lengthMm\",width_mm AS \"widthMm\",height_mm AS \"heightMm\",weight_kg AS \"weightKg\" FROM dimensions")).rows)store.dimensions.set(x.id,x);
- for(const x of (await q.query("SELECT id,configuration_id AS \"configurationId\",kind,unit,speed_rpm AS \"speedRpm\",frequency_hz AS \"frequencyHz\",source_id AS \"sourceId\" FROM performance_curves")).rows){const points=(await q.query("SELECT q,value FROM curve_points WHERE curve_id=$1 ORDER BY q",[x.id])).rows;store.curves.set(x.id,{...x,points})}
+ for(const x of (await q.query("SELECT id,configuration_id AS \"configurationId\",kind,unit,speed_rpm AS \"speedRpm\",frequency_hz AS \"frequencyHz\",source_id AS \"sourceId\" FROM performance_curves")).rows){const points=(await q.query("SELECT q,value FROM curve_points WHERE curve_id=$1 ORDER BY q",[x.id])).rows;store.curves.set(x.id,{...x,points})}\n for(const x of (await q.query("SELECT id,code,name,enabled,severity,kind,expression,parameters_json FROM engineering_rules WHERE enabled=TRUE")).rows)store.rules.set(x.id,{...x,parameters:JSON.parse(x.parameters_json??"{}")});
 }
