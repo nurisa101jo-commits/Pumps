@@ -7,7 +7,7 @@ import {createPool,pingDatabase} from "@pumps/db/postgres";
 import {registerCatalogRoutes} from "./catalog-routes.js";
 import {registerProjectRoutes} from "./project-routes.js";
 import {createEngineeringOptionStore,loadEngineeringOptions} from "@pumps/db/engineering-options";
-import {createDocumentStore,loadDocuments} from "@pumps/db/document-service";
+import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/document-service";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -23,6 +23,9 @@ async function start(){
  registerProjectRoutes(app,projectStore);
  app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.5.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
  
+
+app.post("/api/v1/source-links",async(request,reply)=>{try{return reply.code(201).send(await linkEntitySource(documentStore,request.body as any))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid source link"})}});
+app.get("/api/v1/source-links/:entityType/:entityId",async(request)=>{if(!documentStore.pool)return [];const p=request.params as any;const rows=await documentStore.pool.query("SELECT esr.entity_type AS \"entityType\",esr.entity_id AS \"entityId\",esr.source_reference_id AS \"sourceReferenceId\",esr.field_name AS \"fieldName\",sr.document_id AS \"documentId\",sr.page,sr.table_name AS \"table\",sr.region,sr.excerpt FROM entity_source_references esr JOIN source_references sr ON sr.id=esr.source_reference_id WHERE esr.entity_type=$1 AND esr.entity_id=$2",[p.entityType,p.entityId]);return rows.rows});
 app.get("/api/v1/documents",async()=>[...documentStore.documents.values()]);
 app.post("/api/v1/documents",async(request,reply)=>{try{const x=request.body as any;if(!x.name||!x.fileName||!x.mimeType||!x.storageKey||!x.uploadedBy)throw new Error("Document metadata is incomplete");return reply.code(201).send(await (await import("@pumps/db/document-service")).createDocument(documentStore,{name:x.name,fileName:x.fileName,mimeType:x.mimeType,storageKey:x.storageKey,checksum:x.checksum,uploadedAt:new Date().toISOString(),uploadedBy:x.uploadedBy,description:x.description}))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid document"})}});
 app.get("/api/v1/documents/:documentId/references",async(req)=>[...documentStore.references.values()].filter(x=>x.documentId===(req.params as any).documentId));
