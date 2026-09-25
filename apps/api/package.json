@@ -1,1 +1,21 @@
-{"name":"@pumps/api","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"tsx src/server.ts","build":"tsc -p tsconfig.json","typecheck":"tsc -p tsconfig.json --noEmit"},"dependencies":{"@pumps/domain":"workspace:*","@pumps/selection-engine":"workspace:*","fastify":"^5.4.0"},"devDependencies":{"tsx":"^4.19.0","typescript":"^5.9.2"}}
+{
+  "name": "@pumps/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@pumps/domain": "workspace:*",
+    "@pumps/selection-engine": "workspace:*",
+    "fastify": "^5.4.0",
+    "@pumps/ai": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.2"
+  }
+}
