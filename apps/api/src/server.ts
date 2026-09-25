@@ -1,6 +1,11 @@
 import Fastify from "fastify";
-import {selectionEngine} from "@pumps/selection-engine";
+import {selectionEngine,selectFromCatalog} from "@pumps/selection-engine";
+import {evaluateRules} from "@pumps/selection-engine/rules";
 const app=Fastify({logger:true});
-app.get("/health",async()=>({status:"ok",service:"pumps-api"}));
+app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.2.0"}));
+app.get("/api/v1/catalog/status",async()=>({status:"ready",source:"company-database",catalogLoaded:false}));
 app.post("/api/v1/selections/preview",async(request,reply)=>reply.send(selectionEngine.select(request.body as any)));
+app.post("/api/v1/selections/run",async(request,reply)=>{const body=request.body as any;return reply.send(selectFromCatalog(body.request,body.catalog??[]));});
+app.post("/api/v1/rules/evaluate",async(request,reply)=>{const body=request.body as any;return reply.send(evaluateRules(body.context,body.rules??[]));});
+app.get("/api/v1/metadata/curve-kinds",async()=>({items:["head","efficiency","power","npsh"]}));
 app.listen({host:"0.0.0.0",port:Number(process.env.PORT??4000)}).catch(e=>{app.log.error(e);process.exit(1)});
