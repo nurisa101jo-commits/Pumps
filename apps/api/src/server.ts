@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import {runMigrations} from "@pumps/db/migration-runner";
 import {parseIngestionFile,HttpAiIngestionProvider,validateExtractedCatalog,validateTargetedScope} from "@pumps/ai";
 import {selectionEngine,selectFromCatalog} from "@pumps/selection-engine";
 import {evaluateRules} from "@pumps/selection-engine/rules";
@@ -23,7 +24,7 @@ const publicationStore=createPublicationStore(pool);
 let databaseReady=false;
 
 async function start(){
- if(pool){await pingDatabase(pool);await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);await loadDocuments(documentStore);await loadIngestion(ingestionStore);await loadPublications(publicationStore);databaseReady=true}
+ if(pool){await pingDatabase(pool);if(process.env.RUN_MIGRATIONS==="true")await runMigrations(pool,{directory:process.env.MIGRATIONS_DIR??"./packages/db/migrations"});await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);await loadDocuments(documentStore);await loadIngestion(ingestionStore);await loadPublications(publicationStore);databaseReady=true}
  registerCatalogRoutes(app,catalogStore,engineeringStore);
  registerProjectRoutes(app,projectStore);
  app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.5.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
