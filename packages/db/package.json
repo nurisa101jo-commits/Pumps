@@ -1,1 +1,18 @@
-{"name":"@pumps/db","private":true,"version":"0.1.0","type":"module","scripts":{"build":"tsc -p tsconfig.json","typecheck":"tsc -p tsconfig.json --noEmit"},"devDependencies":{"typescript":"^5.9.2"}}
+{
+  "name": "@pumps/db",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "exports": {
+    "./catalog-service": "./dist/catalog-service.js",
+    "./catalog-validation": "./dist/catalog-validation.js",
+    ".": "./dist/schema.js"
+  }
+}
