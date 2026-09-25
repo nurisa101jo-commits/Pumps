@@ -10,10 +10,13 @@ export function createEngineeringOptionStore(pool?:Pool):EngineeringOptionStore{
 }
 export async function loadEngineeringOptions(store:EngineeringOptionStore){
   if(!store.pool)return;
+  store.links.clear();
   for(const kind of ["material","seal","connection","impeller","accessory"] as const){
     const rows=await store.pool.query(`SELECT id,code,name,description,active FROM ${tableFor(kind)} ORDER BY code`);
     const map=store.options.get(kind)!; map.clear();
     for(const row of rows.rows)map.set(row.id,{...row,kind});
+    const links=await store.pool.query("SELECT configuration_id,option_id FROM configuration_options WHERE option_kind=$1",[kind]);
+    for(const row of links.rows){const list=store.links.get(row.configuration_id)??[];list.push({kind,optionId:row.option_id});store.links.set(row.configuration_id,list)}
   }
 }
 export async function createEngineeringOption(store:EngineeringOptionStore,input:Omit<EngineeringOption,"id">){
