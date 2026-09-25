@@ -9,3 +9,11 @@ export async function createDocument(store:DocumentStore,input:Omit<ProductDocum
 export async function createSourceReference(store:DocumentStore,input:Omit<SourceReference,"id">){const id=randomUUID();const item={id,...input};if(!store.documents.has(item.documentId))throw new Error("documentId does not exist");if(store.pool)await store.pool.query("INSERT INTO source_references(id,document_id,page,table_name,region,excerpt) VALUES($1,$2,$3,$4,$5,$6)",[id,item.documentId,item.page??null,item.table??null,item.region??null,item.excerpt??null]);store.references.set(id,item);return item}
 
 export async function linkEntitySource(store:DocumentStore,input:EntitySourceLink){if(!store.references.has(input.sourceReferenceId))throw new Error("sourceReferenceId does not exist");store.links.push(input);if(store.pool)await store.pool.query("INSERT INTO entity_source_references(entity_type,entity_id,source_reference_id,field_name) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[input.entityType,input.entityId,input.sourceReferenceId,input.fieldName??null]);return input}
+
+export async function ensureDocument(store:DocumentStore,id:string,input:Omit<ProductDocument,"id">){
+ const existing=store.documents.get(id);
+ if(existing)return existing;
+ const item={id,...input};
+ if(store.pool)await store.pool.query("INSERT INTO product_documents(id,name,file_name,mime_type,storage_key,checksum,uploaded_at,uploaded_by,description) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[id,item.name,item.fileName,item.mimeType,item.storageKey,item.checksum??null,item.uploadedAt,item.uploadedBy,item.description??null]);
+ store.documents.set(id,item);return item;
+}
