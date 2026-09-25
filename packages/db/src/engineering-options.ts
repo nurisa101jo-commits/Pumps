@@ -27,4 +27,5 @@ export async function createEngineeringOption(store:EngineeringOptionStore,input
 export async function linkConfigurationOption(store:EngineeringOptionStore,configurationId:string,kind:EngineeringOptionKind,optionId:string){
   if(!store.options.get(kind)?.has(optionId))throw new Error("Option does not exist");
   if(store.pool)await store.pool.query("INSERT INTO configuration_options(configuration_id,option_kind,option_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[configurationId,kind,optionId]);
+  const list=store.links.get(configurationId)??[]; if(!list.some(x=>x.kind===kind&&x.optionId===optionId)){list.push({kind,optionId});store.links.set(configurationId,list)}
 }
