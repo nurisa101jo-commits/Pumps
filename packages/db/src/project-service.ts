@@ -17,11 +17,11 @@ export async function loadProjects(store:ProjectStore){
   const q=store.pool;
   const projects=await q.query(`SELECT id,number,customer_name AS "customerName",customer_company AS "customerCompany",title,application,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM selection_projects ORDER BY created_at DESC`);
   const points=await q.query(`SELECT id,project_id AS "projectId",label,q,head,efficiency,npshr,power_kw AS "powerKw" FROM project_duty_points ORDER BY id`);
-  const selections=await q.query(`SELECT id,project_id AS "projectId",configuration_id AS "configurationId",selected_option_ids_json AS "selectedOptionIdsJson",created_at AS "createdAt" FROM project_selections ORDER BY created_at DESC`);
+  const selections=await q.query(`SELECT id,project_id AS "projectId",configuration_id AS "configurationId",selected_option_ids_json AS "selectedOptionIdsJson",created_at AS "createdAt",duty_results_json AS "dutyResultsJson",warnings_json AS "warningsJson",engine_version AS "engineVersion" FROM project_selections ORDER BY created_at DESC`);
   store.projects.clear(); store.dutyPoints.clear(); store.selections.clear();
   for(const row of projects.rows)store.projects.set(row.id,row);
   for(const row of points.rows)store.dutyPoints.set(row.id,row);
-  for(const row of selections.rows)store.selections.set(row.id,{id:row.id,projectId:row.projectId,configurationId:row.configurationId,selectedOptionIds:JSON.parse(row.selectedOptionIdsJson??"[]"),createdAt:row.createdAt});
+  for(const row of selections.rows)store.selections.set(row.id,{id:row.id,projectId:row.projectId,configurationId:row.configurationId,selectedOptionIds:JSON.parse(row.selectedOptionIdsJson??"[]"),createdAt:row.createdAt,engineVersion:row.engineVersion,dutyResults:JSON.parse(row.dutyResultsJson??"[]"),warnings:JSON.parse(row.warningsJson??"[]")});
 }
 
 export async function createProject(store:ProjectStore,project:Project){
@@ -40,7 +40,7 @@ export async function addDutyPoint(store:ProjectStore,point:ProjectDutyPoint){
 export async function selectConfiguration(store:ProjectStore,selection:ProjectSelection){
   if(!store.projects.has(selection.projectId))throw new Error("projectId does not exist");
   if(store.pool){
-    await store.pool.query(`INSERT INTO project_selections(id,project_id,configuration_id,selected_option_ids_json,created_at) VALUES($1,$2,$3,$4,$5)`,[selection.id,selection.projectId,selection.configurationId,JSON.stringify(selection.selectedOptionIds??[]),selection.createdAt]);
+    await store.pool.query(`INSERT INTO project_selections(id,project_id,configuration_id,selected_option_ids_json,created_at,duty_results_json,warnings_json,engine_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[selection.id,selection.projectId,selection.configurationId,JSON.stringify(selection.selectedOptionIds??[]),selection.createdAt]);
     await store.pool.query(`UPDATE selection_projects SET status=$1,updated_at=$2 WHERE id=$3`,["selected",new Date().toISOString(),selection.projectId]);
   }
   store.selections.set(selection.id,selection);
