@@ -6,5 +6,4 @@ export class HttpAiIngestionProvider implements AiIngestionBoundary{
   if(!response.ok)throw new Error("AI ingestion provider returned HTTP "+response.status);
   return await response.json() as IngestionCandidate<T>;
  }
- async approve<T>(candidate:IngestionCandidate<T>,confirmation:boolean){if(!confirmation&&candidate.conflicts.length>0)throw new Error("Unresolved conflicts require confirmation");return{...candidate,status:"approved"}}
 }
