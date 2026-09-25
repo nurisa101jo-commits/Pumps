@@ -1,1 +1,18 @@
-{"name":"@pumps/selection","private":true,"version":"0.1.0","scripts":{"dev":"vite --host 0.0.0.0 --port 4174","build":"vite build"},"dependencies":{"@vitejs/plugin-react":"latest","vite":"latest","typescript":"^5.9.2","react":"latest","react-dom":"latest"},"devDependencies":{}}
+{
+  "name": "@pumps/selection",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4174",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "^5.9.2",
+    "react": "latest",
+    "react-dom": "latest",
+    "@pumps/domain": "workspace:*"
+  },
+  "devDependencies": {}
+}
