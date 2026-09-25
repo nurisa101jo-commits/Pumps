@@ -5,6 +5,7 @@ import type {IngestionStore} from "./ingestion-service";
 import type {SourceReference} from "@pumps/domain/source";
 import type {DocumentStore} from "./document-service";
 import {createSourceReference,linkEntitySource} from "./document-service";
+import {createEngineeringOption,linkConfigurationOption,type EngineeringOptionStore} from "./engineering-options";
 
 function sourceOf(x:any):SourceReference[]{if(!x)return[];if(Array.isArray(x.sources))return x.sources;return x.source?[x.source]:[]}
 
@@ -15,7 +16,7 @@ export async function loadPublications(store:PublicationStore){if(!store.pool)re
 function value<T>(x:any):T{return x&&typeof x==="object"&&"value" in x?x.value:x}
 function idFrom(code:string|undefined,fallback:string){return code?code.replace(/[^a-zA-Z0-9_-]+/g,"-").toLowerCase()||fallback:fallback}
 
-async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogStore,candidate:any,publishedBy:string,linkSource:(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>Promise<void>){
+async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogStore,engineering:EngineeringOptionStore,candidate:any,publishedBy:string,linkSource:(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>Promise<void>){
  const raw=candidate.payload as any;
  const data=raw.catalog??raw;
  if(!data.series||!Array.isArray(data.models))throw new Error("Catalog candidate requires series and models");
@@ -40,6 +41,17 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
    if(!motorId)throw new Error("Configuration "+value<string>(c.code)+" is missing motor data");
    const config={id:configId,modelId,code:value<string>(c.code),name:value<string|undefined>(c.name),motorId,seal:value<string|undefined>(c.seal),connection:value<string|undefined>(c.connection),impeller:value<string|undefined>(c.impeller),materials:Object.fromEntries(Object.entries(c.materials??{}).map(([k,v]:any)=>[k,value<string>(v)])),active:true};
    catalog.configurations.set(configId,config);created.configurations.push(config);for(const [field,v] of Object.entries(c)){if(["curves","dimensions","motor","source"].includes(field))continue;for(const s of sourceOf(v))await linkSource("configuration",configId,field,s)}
+   const optionEntries:Array<{kind:"material"|"seal"|"connection"|"impeller"|"accessory";code:string;name:string}>=[];
+   for(const [key,v] of Object.entries(c.materials??{})){const code=value<string>(v);if(code)optionEntries.push({kind:"material",code,name:key})}
+   if(c.seal){const code=value<string>(c.seal);if(code)optionEntries.push({kind:"seal",code,name:code})}
+   if(c.connection){const code=value<string>(c.connection);if(code)optionEntries.push({kind:"connection",code,name:code})}
+   if(c.impeller){const code=value<string>(c.impeller);if(code)optionEntries.push({kind:"impeller",code,name:code})}
+   if(Array.isArray(c.accessories))for(const v of c.accessories){const code=value<string>(v);if(code)optionEntries.push({kind:"accessory",code,name:code})}
+   for(const option of optionEntries){
+    const existing=[...engineering.options.get(option.kind)!.values()].find(x=>x.code===option.code);
+    const item=existing??await createEngineeringOption(engineering,{kind:option.kind,code:option.code,name:option.name,active:true});
+    await linkConfigurationOption(engineering,configId,option.kind,item.id);
+   }
    if(c.dimensions){
     const d={id:randomUUID(),configurationId:configId,lengthMm:value<number|undefined>(c.dimensions.lengthMm),widthMm:value<number|undefined>(c.dimensions.widthMm),heightMm:value<number|undefined>(c.dimensions.heightMm),weightKg:value<number|undefined>(c.dimensions.weightKg)};
     catalog.dimensions.set(d.id,d);created.dimensions.push(d);for(const [field,v] of Object.entries(c.dimensions)){if(field==="source")continue;for(const s of sourceOf(v))await linkSource("dimension",d.id,field,s)}
@@ -68,13 +80,13 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
  return created;
 }
 
-export async function publishCandidate(ingestion:IngestionStore,publication:PublicationStore,catalog:CatalogStore,documents:DocumentStore,candidateId:string,input:{publishedBy:string;entityType:"pump_series"|"pump_model"|"motor"|"configuration"|"catalog";entityId?:string}){
+export async function publishCandidate(ingestion:IngestionStore,publication:PublicationStore,catalog:CatalogStore,documents:DocumentStore,engineering:EngineeringOptionStore,candidateId:string,input:{publishedBy:string;entityType:"pump_series"|"pump_model"|"motor"|"configuration"|"catalog";entityId?:string}){
  const c=ingestion.candidates.get(candidateId);if(!c)throw new Error("Candidate not found");
  if(c.status!=="approved")throw new Error("Candidate must be approved before publication");
  const approval=[...ingestion.approvals.values()].find(x=>x.candidateId===candidateId);if(!approval)throw new Error("Approval record not found");
  if(input.entityType==="catalog"){
   const linkSource=async(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>{let sourceId=(source as any).id as string|undefined;if(!sourceId){const created=await createSourceReference(documents,{documentId:source.documentId,page:source.page,table:source.table,region:source.region,excerpt:source.excerpt});sourceId=created.id;}await linkEntitySource(documents,{entityType,entityId,sourceReferenceId:sourceId,fieldName});};
-  const created=await publishCatalogPayload(ingestion,catalog,c,input.publishedBy,linkSource);
+  const created=await publishCatalogPayload(ingestion,catalog,engineering,c,input.publishedBy,linkSource);
   const id=randomUUID(),publishedAt=new Date().toISOString();
   const item={id,candidateId,approvedRecordId:approval.id,publishedBy:input.publishedBy,publishedAt,entityType:"catalog",entityId:created.series.id,createdEntity:true,payload:created};
   if(publication.pool)await publication.pool.query("INSERT INTO ingestion_publications(id,candidate_id,approved_record_id,published_by,published_at,entity_type,entity_id,created_entity,payload_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[id,candidateId,approval.id,input.publishedBy,publishedAt,"catalog",created.series.id,true,JSON.stringify(created)]);
