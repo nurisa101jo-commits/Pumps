@@ -12,3 +12,8 @@ The initial migration models:
 - audit events
 
 The persistence boundary is exposed through repository interfaces so the selection engine does not depend on SQL details.
+
+
+## Migration runner
+
+The API can run numbered SQL migrations before loading repositories when `RUN_MIGRATIONS=true`. Applied versions are recorded in `schema_migrations`; each migration executes inside a transaction and is skipped once its version is recorded.
