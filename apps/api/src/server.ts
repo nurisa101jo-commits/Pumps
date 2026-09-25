@@ -6,16 +6,18 @@ import {createProjectStore,loadProjects} from "@pumps/db/project-service";
 import {createPool,pingDatabase} from "@pumps/db/postgres";
 import {registerCatalogRoutes} from "./catalog-routes.js";
 import {registerProjectRoutes} from "./project-routes.js";
+import {createEngineeringOptionStore,loadEngineeringOptions} from "@pumps/db/engineering-options";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
 const catalogStore=createCatalogStore(pool);
 const projectStore=createProjectStore(pool);
+const engineeringStore=createEngineeringOptionStore(pool);
 let databaseReady=false;
 
 async function start(){
- if(pool){await pingDatabase(pool);await loadCatalog(catalogStore);await loadProjects(projectStore);databaseReady=true}
- registerCatalogRoutes(app,catalogStore);
+ if(pool){await pingDatabase(pool);await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);databaseReady=true}
+ registerCatalogRoutes(app,catalogStore,engineeringStore);
  registerProjectRoutes(app,projectStore);
  app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.5.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
  app.get("/api/v1/catalog/status",async()=>({status:"ready",source:pool?"postgresql":"memory",catalogLoaded:catalogStore.configurations.size>0,series:catalogStore.series.size,models:catalogStore.models.size,configurations:catalogStore.configurations.size}));
