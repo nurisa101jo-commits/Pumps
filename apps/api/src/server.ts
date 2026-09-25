@@ -1,7 +1,11 @@
 import Fastify from "fastify";
 import {selectionEngine,selectFromCatalog} from "@pumps/selection-engine";
 import {evaluateRules} from "@pumps/selection-engine/rules";
+import {createCatalogStore} from "@pumps/db/catalog-service";
+import {registerCatalogRoutes} from "./catalog-routes.js";
 const app=Fastify({logger:true});
+const catalogStore=createCatalogStore();
+registerCatalogRoutes(app,catalogStore);
 app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.2.0"}));
 app.get("/api/v1/catalog/status",async()=>({status:"ready",source:"company-database",catalogLoaded:false}));
 app.post("/api/v1/selections/preview",async(request,reply)=>reply.send(selectionEngine.select(request.body as any)));
