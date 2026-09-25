@@ -6,5 +6,5 @@ export type PerformanceCurve={id:string;modelId:string;speedRpm:number;frequency
 export type DimensionSet={id:string;modelId:string;configurationId:string;lengthMm?:number;widthMm?:number;heightMm?:number;weightKg?:number};
 export type PumpConfiguration={id:string;modelId:string;code:string;motorId:string;dimensionSetId?:string;curveId?:string;materials?:Record<string,string>;seal?:string;connection?:string};
 export type SelectionRequest={dutyPoints:Array<{q:number;head:number;label?:string}>;fluid?:{name?:string;temperatureC?:number;viscosityCst?:number;densityKgM3?:number};application?:string;constraints?:{minEfficiency?:number;maxNpshr?:number;allowedConfigurationIds?:string[]}};
-export type SelectionCandidate={configurationId:string;modelId:string;motorId:string;score:number;dutyResults:Array<{q:number;requiredHead:number;availableHead:number;headError:number;efficiency?:number;npshr?:number}>};
+export type SelectionCandidate={configurationId:string;modelId:string;motorId:string;score:number;dutyResults:Array<{q:number;requiredHead:number;availableHead:number;headError:number;efficiency?:number;npshr?:number;powerKw?:number;hydraulicPowerKw?:number;motorPowerKw:number;operatingPointValid:boolean}>};
 export type SelectionResult={candidates:SelectionCandidate[];warnings:string[];engineVersion:string};
