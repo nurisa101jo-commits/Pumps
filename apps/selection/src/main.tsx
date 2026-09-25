@@ -1,0 +1,2 @@
+import React from "react";import{createRoot}from"react-dom/client";import"./style.css";
+function App(){return <main><h1>Pump Selection</h1><p>Project requirements, hydraulic duty points, deterministic matching, configuration and engineering reports.</p><div className="card"><b>Selection flow</b><span>Upload project information</span><span>Extract and review duty points</span><span>Run deterministic hydraulic selection</span><span>Configure and generate engineering report</span></div></main>}createRoot(document.getElementById("root")!).render(<App/>);
