@@ -20,6 +20,7 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
  const data=raw.catalog??raw;
  if(!data.series||!Array.isArray(data.models))throw new Error("Catalog candidate requires series and models");
  const seriesId=idFrom(value<string>(data.series.code),randomUUID());
+ const original={series:new Map(catalog.series),models:new Map(catalog.models),motors:new Map(catalog.motors),configurations:new Map(catalog.configurations),dimensions:new Map(catalog.dimensions),curves:new Map(catalog.curves)};
  const series={id:seriesId,code:value<string>(data.series.code),name:value<string>(data.series.name),description:value<string|undefined>(data.series.description)};
  if(catalog.series.has(seriesId))throw new Error("Catalog series already exists: "+seriesId);
  catalog.series.set(seriesId,series);for(const s of sourceOf(data.series.code))await linkSource("pump_series",seriesId,"code",s);for(const s of sourceOf(data.series.name))await linkSource("pump_series",seriesId,"name",s);
@@ -61,7 +62,7 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
    for(const d of created.dimensions)await client.query("INSERT INTO dimensions(id,configuration_id,length_mm,width_mm,height_mm,weight_kg) VALUES($1,$2,$3,$4,$5,$6)",[d.id,d.configurationId,d.lengthMm??null,d.widthMm??null,d.heightMm??null,d.weightKg??null]);
    for(const cv of created.curves){await client.query("INSERT INTO performance_curves(id,configuration_id,kind,unit,speed_rpm,frequency_hz) VALUES($1,$2,$3,$4,$5,$6)",[cv.id,cv.configurationId,cv.kind,cv.unit,cv.speedRpm,cv.frequencyHz]);for(const p of cv.points)await client.query("INSERT INTO curve_points(id,curve_id,q,value) VALUES($1,$2,$3,$4)",[randomUUID(),cv.id,p.q,p.value])}
    await client.query("COMMIT");
-  }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
+  }catch(e){catalog.series=original.series;catalog.models=original.models;catalog.motors=original.motors;catalog.configurations=original.configurations;catalog.dimensions=original.dimensions;catalog.curves=original.curves;await client.query("ROLLBACK");throw e}finally{client.release()}
  }
  recordAudit(catalog,{id:randomUUID(),entityType:"pump_series",entityId:series.id,action:"publish_catalog_from_ingestion",actorId:publishedBy,timestamp:new Date().toISOString(),after:created});
  return created;
