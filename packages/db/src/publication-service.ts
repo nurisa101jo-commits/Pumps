@@ -1,7 +1,6 @@
 import type {Pool} from "pg";
 import {randomUUID} from "node:crypto";
 import {persistCatalogItem,recordAudit,type CatalogStore} from "./catalog-service";
-import {withTransaction} from "./postgres";
 import type {IngestionStore} from "./ingestion-service";
 export type PublicationStore={pool?:Pool;publications:Map<string,any>};
 export function createPublicationStore(pool?:Pool):PublicationStore{return{pool,publications:new Map()}};
