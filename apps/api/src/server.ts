@@ -13,6 +13,7 @@ import {createEngineeringOptionStore,loadEngineeringOptions} from "@pumps/db/eng
 import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/document-service";
 import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,updateCandidate,approveCandidate} from "@pumps/db/ingestion-service";
 import {createPublicationStore,loadPublications,publishCandidate} from "@pumps/db/publication-service";
+import {createCatalogBackup,listCatalogBackups,readCatalogBackup} from "@pumps/db/backup-service";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -47,7 +48,10 @@ app.get("/api/v1/documents",async()=>[...documentStore.documents.values()]);
 app.post("/api/v1/documents",async(request,reply)=>{try{const x=request.body as any;if(!x.name||!x.fileName||!x.mimeType||!x.storageKey||!x.uploadedBy)throw new Error("Document metadata is incomplete");return reply.code(201).send(await (await import("@pumps/db/document-service")).createDocument(documentStore,{name:x.name,fileName:x.fileName,mimeType:x.mimeType,storageKey:x.storageKey,checksum:x.checksum,uploadedAt:new Date().toISOString(),uploadedBy:x.uploadedBy,description:x.description}))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid document"})}});
 app.get("/api/v1/documents/:documentId/references",async(req)=>[...documentStore.references.values()].filter(x=>x.documentId===(req.params as any).documentId));
 app.post("/api/v1/documents/:documentId/references",async(req,reply)=>{try{return reply.code(201).send(await (await import("@pumps/db/document-service")).createSourceReference(documentStore,{documentId:(req.params as any).documentId,...(req.body as any)}))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid source reference"})}});
-app.get("/api/v1/catalog/status",async()=>({status:"ready",source:pool?"postgresql":"memory",catalogLoaded:catalogStore.configurations.size>0,series:catalogStore.series.size,models:catalogStore.models.size,configurations:catalogStore.configurations.size}));
+app.post("/api/v1/backups",async(req,reply)=>{try{return reply.code(201).send(await createCatalogBackup(catalogStore,((req.body as any)?.type==="automatic"?"automatic":"manual")))}catch(e){return reply.code(500).send({error:e instanceof Error?e.message:"Backup failed"})}});
+ app.get("/api/v1/backups",async()=>listCatalogBackups());
+ app.get("/api/v1/backups/:file",async(req,reply)=>{try{return reply.send(await readCatalogBackup((req.params as any).file))}catch(e){return reply.code(404).send({error:e instanceof Error?e.message:"Backup not found"})}});
+ app.get("/api/v1/catalog/status",async()=>({status:"ready",source:pool?"postgresql":"memory",catalogLoaded:catalogStore.configurations.size>0,series:catalogStore.series.size,models:catalogStore.models.size,configurations:catalogStore.configurations.size}));
  app.post("/api/v1/selections/preview",async(request,reply)=>reply.send(selectionEngine.select(request.body as any)));
  app.post("/api/v1/selections/run",async(request,reply)=>{const body=request.body as any;const catalog=[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries((engineeringStore.links.get(c.id)??[]).map(link=>[link.kind,(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===link.kind).map(x=>x.optionId)])),rules:[...catalogStore.rules.values()].filter(rule=>!rule.configurationIds||rule.configurationIds.includes(c.id)),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));return reply.send(selectFromCatalog(body.request??body,catalog))});
  app.post("/api/v1/rules/evaluate",async(request,reply)=>reply.send(evaluateRules((request.body as any).context,(request.body as any).rules??[])));
