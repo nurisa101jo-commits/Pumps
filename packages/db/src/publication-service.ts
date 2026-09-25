@@ -9,8 +9,8 @@ import {createEngineeringOption,linkConfigurationOption,type EngineeringOptionSt
 
 function sourceOf(x:any):SourceReference[]{if(!x)return[];if(Array.isArray(x.sources))return x.sources;return x.source?[x.source]:[]}
 
-export type PublicationStore={pool?:Pool;publications:Map<string,any>};
-export function createPublicationStore(pool?:Pool):PublicationStore{return{pool,publications:new Map()}};
+export type PublicationStore={pool?:Pool | undefined;publications:Map<string,any>};
+export function createPublicationStore(pool?:Pool | undefined):PublicationStore{return{pool,publications:new Map()}};
 export async function loadPublications(store:PublicationStore){if(!store.pool)return;const rows=await store.pool.query('SELECT id,candidate_id AS "candidateId",approved_record_id AS "approvedRecordId",published_by AS "publishedBy",published_at AS "publishedAt",entity_type AS "entityType",entity_id AS "entityId",created_entity AS "createdEntity",payload_json FROM ingestion_publications ORDER BY published_at DESC');store.publications.clear();for(const x of rows.rows)store.publications.set(x.id,{...x,payload:JSON.parse(x.payload_json)})}
 
 function value<T>(x:any):T{return x&&typeof x==="object"&&"value" in x?x.value:x}
