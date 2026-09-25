@@ -18,7 +18,8 @@
     "./catalog-validation": "./dist/catalog-validation.js",
     "./project-service": "./dist/project-service.js",
     "./postgres": "./dist/postgres.js",
-    "./engineering-options": "./dist/engineering-options.js"
+    "./engineering-options": "./dist/engineering-options.js",
+    "./document-service": "./dist/document-service.js"
   },
   "dependencies": {
     "@pumps/domain": "workspace:*",
