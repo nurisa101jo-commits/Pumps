@@ -16,3 +16,4 @@ CREATE INDEX IF NOT EXISTS idx_configuration_model ON pump_configurations(model_
 CREATE INDEX IF NOT EXISTS idx_curve_configuration ON performance_curves(configuration_id);
 CREATE INDEX IF NOT EXISTS idx_curve_points_curve_q ON curve_points(curve_id,q);
 CREATE INDEX IF NOT EXISTS idx_project_duty_project ON project_duty_points(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_selection_project ON project_selections(project_id);
