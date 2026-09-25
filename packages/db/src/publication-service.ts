@@ -3,6 +3,8 @@ import {randomUUID} from "node:crypto";
 import {persistCatalogItem,recordAudit,type CatalogStore} from "./catalog-service";
 import type {IngestionStore} from "./ingestion-service";
 import type {SourceReference} from "@pumps/domain/source";
+import type {DocumentStore} from "./document-service";
+import {createSourceReference,linkEntitySource} from "./document-service";
 
 function sourceOf(x:any):SourceReference[]{if(!x)return[];if(Array.isArray(x.sources))return x.sources;return x.source?[x.source]:[]}
 
@@ -65,12 +67,12 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
  return created;
 }
 
-export async function publishCandidate(ingestion:IngestionStore,publication:PublicationStore,catalog:CatalogStore,candidateId:string,input:{publishedBy:string;entityType:"pump_series"|"pump_model"|"motor"|"configuration"|"catalog";entityId?:string}){
+export async function publishCandidate(ingestion:IngestionStore,publication:PublicationStore,catalog:CatalogStore,documents:DocumentStore,candidateId:string,input:{publishedBy:string;entityType:"pump_series"|"pump_model"|"motor"|"configuration"|"catalog";entityId?:string}){
  const c=ingestion.candidates.get(candidateId);if(!c)throw new Error("Candidate not found");
  if(c.status!=="approved")throw new Error("Candidate must be approved before publication");
  const approval=[...ingestion.approvals.values()].find(x=>x.candidateId===candidateId);if(!approval)throw new Error("Approval record not found");
  if(input.entityType==="catalog"){
-  const linkSource=async(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>{const documentStore=(catalog as any).documentStore;const sourceId=(source as any).id;if(documentStore&&sourceId)await documentStore.links.push({entityType,entityId,sourceReferenceId:sourceId,fieldName});if(publication.pool&&sourceId)await publication.pool.query("INSERT INTO entity_source_references(entity_type,entity_id,source_reference_id,field_name) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[entityType,entityId,sourceId,fieldName])};
+  const linkSource=async(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>{let sourceId=(source as any).id as string|undefined;if(!sourceId){const created=await createSourceReference(documents,{documentId:source.documentId,page:source.page,table:source.table,region:source.region,excerpt:source.excerpt});sourceId=created.id;}await linkEntitySource(documents,{entityType,entityId,sourceReferenceId:sourceId,fieldName});};
   const created=await publishCatalogPayload(ingestion,catalog,c,input.publishedBy,linkSource);
   const id=randomUUID(),publishedAt=new Date().toISOString();
   const item={id,candidateId,approvedRecordId:approval.id,publishedBy:input.publishedBy,publishedAt,entityType:"catalog",entityId:created.series.id,createdEntity:true,payload:created};
