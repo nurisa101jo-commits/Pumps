@@ -11,8 +11,11 @@
     "typescript": "^5.9.2"
   },
   "exports": {
+    ".": "./dist/schema.js",
     "./catalog-service": "./dist/catalog-service.js",
-    "./catalog-validation": "./dist/catalog-validation.js",
-    ".": "./dist/schema.js"
+    "./catalog-validation": "./dist/catalog-validation.js"
+  },
+  "dependencies": {
+    "@pumps/domain": "workspace:*"
   }
 }
