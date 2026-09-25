@@ -31,5 +31,4 @@ export function registerProjectRoutes(app:FastifyInstance,store=createProjectSto
       return reply.code(201).send(await selectConfiguration(store,selection));
     }catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid selection"})}
   });
-  return loadProjects(store);
 }
