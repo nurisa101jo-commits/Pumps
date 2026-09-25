@@ -20,3 +20,8 @@ Rules are independent from product data and cover compatibility, limits, applica
 ## AI extraction contract
 
 AI catalog extraction is structured around Series -> Model -> Configuration. A configuration owns its compatible motor, dimensions, curves and engineering options. Curve data is numeric (Q/value points with speed/frequency metadata), not image-only. Extraction is validated before review; validation errors become explicit conflicts and do not publish data.
+
+
+## Field-level traceability
+
+Extracted catalog values may carry multiple source references. Curve Q/value points, motor attributes, dimensions, configuration codes and options can each retain their own page/table/region references. This allows engineer review to trace an individual value back to its document location.
