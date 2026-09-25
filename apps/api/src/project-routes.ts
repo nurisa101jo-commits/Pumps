@@ -6,7 +6,8 @@ import type {CatalogConfiguration} from "@pumps/selection-engine";
 
 const makeId=()=>crypto.randomUUID();
 
-export function registerProjectRoutes(app:FastifyInstance,store=createProjectStore(),catalog:CatalogConfiguration[]|(()=>CatalogConfiguration[])=[]){\n  const getCatalog=()=>typeof catalog==="function"?catalog():catalog;
+export function registerProjectRoutes(app:FastifyInstance,store=createProjectStore(),catalog:CatalogConfiguration[]|(()=>CatalogConfiguration[])=[]){
+  const getCatalog=()=>typeof catalog==="function"?catalog():catalog;
   app.get("/api/v1/projects",async()=>[...store.projects.values()]);
   app.post("/api/v1/projects",async(req,reply)=>{
     try{
