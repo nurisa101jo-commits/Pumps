@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@types/pg": "^8.15.5"
   },
   "exports": {
     ".": "./dist/schema.js",
@@ -17,6 +18,7 @@
     "./project-service": "./dist/project-service.js"
   },
   "dependencies": {
-    "@pumps/domain": "workspace:*"
+    "@pumps/domain": "workspace:*",
+    "pg": "^8.16.3"
   }
 }
