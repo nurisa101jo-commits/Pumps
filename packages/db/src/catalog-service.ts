@@ -7,6 +7,8 @@ export type CatalogStore={series:Map<string,any>;models:Map<string,any>;motors:M
 export function createCatalogStore(pool?:Pool):CatalogStore{return{series:new Map(),models:new Map(),motors:new Map(),configurations:new Map(),curves:new Map(),dimensions:new Map(),rules:new Map(),audit:[],pool}}
 export function assertUnique(store:CatalogStore,collection:keyof Pick<CatalogStore,"series"|"models"|"motors"|"configurations"|"curves"|"dimensions">,field:string,value:unknown,ignoreId?:string){for(const [id,item] of store[collection])if(id!==ignoreId&&item[field]===value)throw new Error("Duplicate "+collection+"."+field+": "+String(value))}
 export function recordAudit(store:CatalogStore,event:AuditEvent){store.audit.push(event)}
+export function snapshotCatalog(store:CatalogStore){return{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()]}}
+export function restoreCatalogSnapshot(store:CatalogStore,snapshot:any){store.series=new Map(snapshot.series.map((x:any)=>[x.id,x]));store.models=new Map(snapshot.models.map((x:any)=>[x.id,x]));store.motors=new Map(snapshot.motors.map((x:any)=>[x.id,x]));store.configurations=new Map(snapshot.configurations.map((x:any)=>[x.id,x]));store.dimensions=new Map(snapshot.dimensions.map((x:any)=>[x.id,x]));store.curves=new Map(snapshot.curves.map((x:any)=>[x.id,x]))}
 export async function persistCatalogItem(store:CatalogStore,kind:"series"|"model"|"motor"|"configuration"|"dimension"|"curve",item:any){
  if(!store.pool)return;
  const q=store.pool;
