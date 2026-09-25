@@ -4,3 +4,4 @@ export type IngestionCandidate<T>={data:T;confidence:number;sources:SourceRefere
 export type ExtractionInput={mimeType:string;fileName:string;documentId:string;content:string;pages?:Array<{page?:number;table?:string;text:string}>};
 export interface AiIngestionBoundary{extract<T>(input:ExtractionInput):Promise<IngestionCandidate<T>>;approve<T>(candidate:IngestionCandidate<T>,confirmation:boolean):Promise<IngestionCandidate<T>>}
 export * from "./file-ingestion.js";
+export * from "./http-provider.js";
