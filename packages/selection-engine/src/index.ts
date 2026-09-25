@@ -28,7 +28,7 @@ export function selectFromCatalog(request:SelectionRequest,catalog:CatalogConfig
   if(failed.some(x=>x.severity==="error")){warnings.push(`Configuration ${c.id} rejected by engineering rules: ${failed.map(x=>x.message).join("; ")}`);return []}
   for(const item of failed)warnings.push(`Configuration ${c.id}: ${item.message}`);
   const score=dutyResults.reduce((s,x)=>s+x.headError,0)/dutyResults.length;
-  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults}]
+  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults:dutyResults.map((d)=>({...d,ruleWarnings:evaluations.filter(e=>!e.passed&&e.severity==="warning").map(e=>e.message)}))}]
  });
  candidates.sort((a,b)=>a.score-b.score);
  return{candidates,warnings,engineVersion:"0.6.0"}
