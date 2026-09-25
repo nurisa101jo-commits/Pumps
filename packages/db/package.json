@@ -20,7 +20,8 @@
     "./postgres": "./dist/postgres.js",
     "./engineering-options": "./dist/engineering-options.js",
     "./document-service": "./dist/document-service.js",
-    "./ingestion-service": "./dist/ingestion-service.js"
+    "./ingestion-service": "./dist/ingestion-service.js",
+    "./publication-service": "./dist/publication-service.js"
   },
   "dependencies": {
     "@pumps/domain": "workspace:*",
