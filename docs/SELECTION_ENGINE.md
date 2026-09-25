@@ -17,3 +17,8 @@ Process:
 - return configuration-level candidates
 
 Future production rules will also evaluate motor compatibility, temperature, fluid compatibility, operating range and other engineering constraints before a final selection.
+
+
+## Hydraulic checks
+
+The deterministic engine evaluates every requested duty point against the structured head curve and optional configuration operating range. It also interpolates efficiency, NPSH and absorbed power curves when available, and calculates hydraulic power from density, gravity, flow and required head. Hydraulic power is reported separately from motor rated power; it is not treated as a substitute for the manufacturer power curve.
