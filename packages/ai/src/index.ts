@@ -5,3 +5,5 @@ export type ExtractionInput={mimeType:string;fileName:string;documentId:string;c
 export interface AiIngestionBoundary{extract<T>(input:ExtractionInput):Promise<IngestionCandidate<T>>;approve<T>(candidate:IngestionCandidate<T>,confirmation:boolean):Promise<IngestionCandidate<T>>}
 export * from "./file-ingestion.js";
 export * from "./http-provider.js";
+export * from "./catalog-schema.js";
+export * from "./catalog-validator.js";
