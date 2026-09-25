@@ -8,7 +8,7 @@ import {registerCatalogRoutes} from "./catalog-routes.js";
 import {registerProjectRoutes} from "./project-routes.js";
 import {createEngineeringOptionStore,loadEngineeringOptions} from "@pumps/db/engineering-options";
 import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/document-service";
-import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,approveCandidate} from "@pumps/db/ingestion-service";
+import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,updateCandidate,approveCandidate} from "@pumps/db/ingestion-service";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -31,6 +31,7 @@ app.get("/api/v1/ingestion/jobs",async()=>[...ingestionStore.jobs.values()]);
 app.post("/api/v1/ingestion/jobs",async(request,reply)=>{try{return reply.code(201).send(await createIngestionJob(ingestionStore,request.body as any))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid ingestion job"})}});
 app.get("/api/v1/ingestion/jobs/:jobId/candidates",async(req)=>[...ingestionStore.candidates.values()].filter(x=>x.jobId===(req.params as any).jobId));
 app.post("/api/v1/ingestion/jobs/:jobId/candidates",async(req,reply)=>{try{return reply.code(201).send(await createCandidate(ingestionStore,{jobId:(req.params as any).jobId,...(req.body as any)}))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid candidate"})}});
+app.patch("/api/v1/ingestion/candidates/:candidateId",async(req,reply)=>{try{return reply.send(await updateCandidate(ingestionStore,(req.params as any).candidateId,req.body as any))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Candidate update rejected"})}});
 app.post("/api/v1/ingestion/candidates/:candidateId/approve",async(req,reply)=>{try{return reply.send(await approveCandidate(ingestionStore,(req.params as any).candidateId,req.body as any))}catch(e){return reply.code(409).send({error:e instanceof Error?e.message:"Approval rejected"})}});
 app.post("/api/v1/source-links",async(request,reply)=>{try{return reply.code(201).send(await linkEntitySource(documentStore,request.body as any))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid source link"})}});
 app.get("/api/v1/source-links/:entityType/:entityId",async(request)=>{if(!documentStore.pool)return [];const p=request.params as any;const rows=await documentStore.pool.query("SELECT esr.entity_type AS \"entityType\",esr.entity_id AS \"entityId\",esr.source_reference_id AS \"sourceReferenceId\",esr.field_name AS \"fieldName\",sr.document_id AS \"documentId\",sr.page,sr.table_name AS \"table\",sr.region,sr.excerpt FROM entity_source_references esr JOIN source_references sr ON sr.id=esr.source_reference_id WHERE esr.entity_type=$1 AND esr.entity_id=$2",[p.entityType,p.entityId]);return rows.rows});
