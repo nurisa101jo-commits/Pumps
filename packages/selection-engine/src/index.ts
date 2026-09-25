@@ -18,7 +18,7 @@ export function selectFromCatalog(request:SelectionRequest,catalog:CatalogConfig
   if(request.constraints?.minEfficiency!==undefined&&dutyResults.some(x=>x.efficiency!==undefined&&x.efficiency<request.constraints!.minEfficiency!))return [];
   const configuration={id:c.id,modelId:c.modelId,code:c.id,motorId:c.motorId} as PumpConfiguration;
   const ruleSet=c.rules??[];
-  const evaluations=dutyResults.flatMap(d=>evaluateRules({configuration,motor:c.motor!,flow:d.q,temperatureC:request.fluid?.temperatureC,fluidName:request.fluid?.name,npshr:d.npshr,optionIds:c.optionIds},ruleSet));
+  const evaluations=dutyResults.flatMap(d=>evaluateRules({configuration,motor:c.motor!,flow:d.q,temperatureC:request.fluid?.temperatureC,fluidName:request.fluid?.name,application:request.application,npshr:d.npshr,optionIds:c.optionIds},ruleSet));
   const failed=evaluations.filter(x=>!x.passed);
   if(failed.some(x=>x.severity==="error")){warnings.push(`Configuration ${c.id} rejected by engineering rules: ${failed.map(x=>x.message).join("; ")}`);return []}
   for(const item of failed)warnings.push(`Configuration ${c.id}: ${item.message}`);
@@ -26,6 +26,6 @@ export function selectFromCatalog(request:SelectionRequest,catalog:CatalogConfig
   return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults}]
  });
  candidates.sort((a,b)=>a.score-b.score);
- return{candidates,warnings,engineVersion:"0.4.0"}
+ return{candidates,warnings,engineVersion:"0.5.0"}
 }
 export const selectionEngine={select:(request:SelectionRequest)=>selectFromCatalog(request,[])};
