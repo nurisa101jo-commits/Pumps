@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS ingestion_publications (id TEXT PRIMARY KEY,candidate_id TEXT NOT NULL REFERENCES ingestion_candidates(id) ON DELETE RESTRICT,approved_record_id TEXT NOT NULL REFERENCES approval_records(id) ON DELETE RESTRICT,published_by TEXT NOT NULL,published_at TEXT NOT NULL,entity_type TEXT NOT NULL,entity_id TEXT NOT NULL,created_entity BOOLEAN NOT NULL DEFAULT FALSE,payload_json TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_ingestion_publication_candidate ON ingestion_publications(candidate_id);
