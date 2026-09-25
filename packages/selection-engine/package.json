@@ -18,6 +18,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./rules": "./dist/rules.js",
-    "./catalog": "./dist/catalog.js"
+    "./catalog": "./dist/catalog.js",
+    "./configuration": "./dist/configuration.js"
   }
 }
