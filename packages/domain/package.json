@@ -1,1 +1,21 @@
-{"name":"@pumps/domain","private":true,"version":"0.1.0","type":"module","scripts":{"build":"tsc -p tsconfig.json","typecheck":"tsc -p tsconfig.json --noEmit"},"devDependencies":{"typescript":"^5.9.2"}}
+{
+  "name": "@pumps/domain",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./curve": "./dist/curve.js",
+    "./rules": "./dist/rules.js",
+    "./audit": "./dist/audit.js",
+    "./ingestion": "./dist/ingestion.js",
+    "./configuration": "./dist/configuration.js"
+  }
+}
