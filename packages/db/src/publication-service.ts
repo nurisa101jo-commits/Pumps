@@ -63,6 +63,15 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
    }
   }
  }
+ const createdValidation=created.configurations.map((config:any)=>{
+   const motor=catalog.motors.get(config.motorId); if(!motor||!Number.isFinite(motor.powerKw)||motor.powerKw<=0)throw new Error("Configuration "+config.code+" has invalid motor data");
+   const curves=created.curves.filter((curve:any)=>curve.configurationId===config.id);
+   const head=curves.find((curve:any)=>curve.kind==="head"); if(!head||head.points.length<2)throw new Error("Configuration "+config.code+" requires a valid head curve with at least two points");
+   for(const curve of curves){if(!Number.isFinite(curve.speedRpm)||curve.speedRpm<=0||!Number.isFinite(curve.frequencyHz)||curve.frequencyHz<=0||curve.points.length<2)throw new Error("Configuration "+config.code+" contains an invalid performance curve")}
+   const dimensions=created.dimensions.find((d:any)=>d.configurationId===config.id); if(dimensions&&[dimensions.lengthMm,dimensions.widthMm,dimensions.heightMm,dimensions.weightKg].some((v:any)=>v!==undefined&&v!==null&&(!Number.isFinite(v)||v<0)))throw new Error("Configuration "+config.code+" contains invalid dimensions");
+   return true;
+ });
+ if(!createdValidation.length&&created.configurations.length)throw new Error("Catalog contains no valid configurations");
  if(catalog.pool){
   const client=await catalog.pool.connect();
   try{
