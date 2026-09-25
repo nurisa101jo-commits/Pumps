@@ -1,5 +1,6 @@
 import type {AuditEvent} from "@pumps/domain/audit";
 import type {Pool} from "pg";
+import {randomUUID} from "node:crypto";
 
 export type CatalogStore={series:Map<string,any>;models:Map<string,any>;motors:Map<string,any>;configurations:Map<string,any>;curves:Map<string,any>;dimensions:Map<string,any>;audit:AuditEvent[];pool?:Pool};
 export function createCatalogStore(pool?:Pool):CatalogStore{return{series:new Map(),models:new Map(),motors:new Map(),configurations:new Map(),curves:new Map(),dimensions:new Map(),audit:[],pool}}
@@ -13,7 +14,7 @@ export async function persistCatalogItem(store:CatalogStore,kind:"series"|"model
  if(kind==="motor")await q.query("INSERT INTO motors(id,power_kw,voltage_v,phase,frequency_hz,speed_rpm) VALUES($1,$2,$3,$4,$5,$6)",[item.id,item.powerKw,item.voltageV??null,item.phase??null,item.frequencyHz??null,item.speedRpm??null]);
  if(kind==="configuration")await q.query("INSERT INTO pump_configurations(id,model_id,code,motor_id,seal,connection,materials_json,weight_kg,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[item.id,item.modelId,item.code,item.motorId,item.seal??null,item.connection??null,JSON.stringify(item.materials??{}),item.weightKg??null,item.active!==false]);
  if(kind==="dimension")await q.query("INSERT INTO dimensions(id,configuration_id,length_mm,width_mm,height_mm,weight_kg) VALUES($1,$2,$3,$4,$5,$6)",[item.id,item.configurationId,item.lengthMm??null,item.widthMm??null,item.heightMm??null,item.weightKg??null]);
- if(kind==="curve"){await q.query("INSERT INTO performance_curves(id,configuration_id,kind,unit,speed_rpm,frequency_hz,source_id) VALUES($1,$2,$3,$4,$5,$6,$7)",[item.id,item.configurationId,item.kind,item.unit,item.speedRpm,item.frequencyHz,item.sourceId??null]);for(const p of item.points??[])await q.query("INSERT INTO curve_points(id,curve_id,q,value) VALUES(gen_random_uuid()::text,$1,$2,$3)",[item.id,p.q,p.value])}
+ if(kind==="curve"){await q.query("INSERT INTO performance_curves(id,configuration_id,kind,unit,speed_rpm,frequency_hz,source_id) VALUES($1,$2,$3,$4,$5,$6,$7)",[item.id,item.configurationId,item.kind,item.unit,item.speedRpm,item.frequencyHz,item.sourceId??null]);for(const p of item.points??[])await q.query("INSERT INTO curve_points(id,curve_id,q,value) VALUES($1,$2,$3,$4)",[randomUUID(),item.id,p.q,p.value])}
 }
 export async function loadCatalog(store:CatalogStore){
  if(!store.pool)return;
