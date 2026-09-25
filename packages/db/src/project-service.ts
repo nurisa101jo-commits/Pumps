@@ -40,7 +40,7 @@ export async function addDutyPoint(store:ProjectStore,point:ProjectDutyPoint){
 export async function selectConfiguration(store:ProjectStore,selection:ProjectSelection){
   if(!store.projects.has(selection.projectId))throw new Error("projectId does not exist");
   if(store.pool){
-    await store.pool.query(`INSERT INTO project_selections(id,project_id,configuration_id,selected_option_ids_json,created_at,duty_results_json,warnings_json,engine_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[selection.id,selection.projectId,selection.configurationId,JSON.stringify(selection.selectedOptionIds??[]),selection.createdAt]);
+    await store.pool.query(`INSERT INTO project_selections(id,project_id,configuration_id,selected_option_ids_json,created_at,duty_results_json,warnings_json,engine_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[selection.id,selection.projectId,selection.configurationId,JSON.stringify(selection.selectedOptionIds??[]),selection.createdAt,JSON.stringify(selection.dutyResults??[]),JSON.stringify(selection.warnings??[]),selection.engineVersion??null]);
     await store.pool.query(`UPDATE selection_projects SET status=$1,updated_at=$2 WHERE id=$3`,["selected",new Date().toISOString(),selection.projectId]);
   }
   store.selections.set(selection.id,selection);
