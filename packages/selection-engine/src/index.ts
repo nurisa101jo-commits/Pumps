@@ -28,7 +28,8 @@ export function selectFromCatalog(request:SelectionRequest,catalog:CatalogConfig
   if(failed.some(x=>x.severity==="error")){warnings.push(`Configuration ${c.id} rejected by engineering rules: ${failed.map(x=>x.message).join("; ")}`);return []}
   for(const item of failed)warnings.push(`Configuration ${c.id}: ${item.message}`);
   const score=dutyResults.reduce((s,x)=>s+x.headError,0)/dutyResults.length;
-  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults:dutyResults.map(d=>({q:d.q,requiredHead:d.requiredHead,availableHead:d.availableHead,headError:d.headError,hydraulicPowerKw:d.hydraulicPowerKw,motorPowerKw:d.motorPowerKw,operatingPointValid:d.operatingPointValid,...(d.efficiency!==undefined?{efficiency:d.efficiency}:{}),...(d.npshr!==undefined?{npshr:d.npshr}:{}),...(d.powerKw!==undefined?{powerKw:d.powerKw}:{}),...(d.motorLoadRatio!==undefined?{motorLoadRatio:d.motorLoadRatio}:{}),...(evaluations.some(e=>!e.passed&&e.severity==="warning")?{ruleWarnings:evaluations.filter(e=>!e.passed&&e.severity==="warning").map(e=>e.message)}:{})}))}]
+  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults:dutyResults.map(d=>({q:d.q,requiredHead:d.requiredHead,availableHead:d.availableHead,headError:d.headError,hydraulicPowerKw:d.hydraulicPowerKw,motorPowerKw:d.motorPowerKw,operatingPointValid:d.operatingPointValid,...(d.efficiency!==undefined?{efficiency:d.efficiency}:{}),...(d.npshr!==undefined?{npshr:d.npshr}:{}),...(d.powerKw!==undefined?{powerKw:d.powerKw}:{}),...(d.motorLoadRatio!==undefined?{motorLoadRatio:d.motorLoadRatio}:{}),...(evaluations.some(e=>!e.passed&&e.severity==="warning")?{ruleWarnings:evaluations.filter(e=>!e.passed&&e.severity==="warning").map(e=>e.message)}:{})}))}];
+ });
  candidates.sort((a,b)=>a.score-b.score);
  return{candidates,warnings,engineVersion:"0.6.0"}
 }
