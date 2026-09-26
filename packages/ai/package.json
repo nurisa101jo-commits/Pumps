@@ -16,5 +16,8 @@
     "pdf-parse": "^2.4.5",
     "xlsx": "^0.18.5",
     "@pumps/domain": "workspace:*"
+  },
+  "exports": {
+    ".": "./dist/index.js"
   }
 }
