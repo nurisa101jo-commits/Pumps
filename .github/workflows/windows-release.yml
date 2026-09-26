@@ -29,9 +29,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch --tags --force
-          if ! git rev-parse refs/tags/v1.0.0 >/dev/null 2>&1; then
-            git tag -a v1.0.0 "$GITHUB_SHA" -m "Pumps Platform 1.0.0"
-            git push origin v1.0.0
+          if ! git rev-parse refs/tags/v1.0.1 >/dev/null 2>&1; then
+            git tag -a v1.0.1 "$GITHUB_SHA" -m "Pumps Platform 1.0.1"
+            git push origin v1.0.1
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -42,8 +42,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: Pumps Platform 1.0.0
+          tag_name: v1.0.1
+          name: Pumps Platform 1.0.1
           body: |
             First complete Windows release of Pumps Platform.
 
