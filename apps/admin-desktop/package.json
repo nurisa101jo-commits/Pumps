@@ -1,0 +1,24 @@
+{
+  "name":"@pumps/admin-desktop",
+  "version":"1.0.1",
+  "private":true,
+  "type":"module",
+  "main":"dist/main.js",
+  "scripts":{
+    "build":"tsc -p tsconfig.json && node scripts/bundle-api.mjs && node scripts/copy-assets.mjs",
+    "package":"electron-builder --win"
+  },
+  "dependencies":{
+    "@pumps/admin":"workspace:*",
+    "@pumps/api":"workspace:*",
+    "@pumps/db":"workspace:*"
+  },
+  "devDependencies":{
+    "electron-builder":"^26.0.12",
+    "typescript":"^5.9.2",
+    "esbuild":"^0.28.2",
+    "electron":"^38.2.0"
+  },
+  "description":"Pumps Platform Administration Portal",
+  "author":"Company Pumps Platform"
+}
