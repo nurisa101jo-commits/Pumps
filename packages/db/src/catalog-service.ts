@@ -8,18 +8,23 @@ export type CatalogStore={series:Map<string,any>;models:Map<string,any>;motors:M
 export function createCatalogStore(pool?:Pool | undefined):CatalogStore{return{series:new Map(),models:new Map(),motors:new Map(),configurations:new Map(),curves:new Map(),dimensions:new Map(),rules:new Map(),audit:[],pool}}
 export function assertUnique(store:CatalogStore,collection:keyof Pick<CatalogStore,"series"|"models"|"motors"|"configurations"|"curves"|"dimensions">,field:string,value:unknown,ignoreId?:string){for(const [id,item] of store[collection])if(id!==ignoreId&&item[field]===value)throw new Error("Duplicate "+collection+"."+field+": "+String(value))}
 export function undoLastAudit(store:CatalogStore,entityType:string,entityId:string){
- const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId);
+ const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId&&!x.metadata?.undoOf&&!x.metadata?.redoOf);
  const last=events.at(-1); if(!last)throw new Error("No reversible audit event found");
  const target=entityType==="pump_configuration"?store.configurations:entityType==="pump_model"?store.models:entityType==="pump_series"?store.series:entityType==="motor"?store.motors:null;
  if(!target)throw new Error("Entity type is not reversible");
- if(last.before===undefined)target.delete(entityId);else target.set(entityId,last.before as any); return last;
+ if(last.before===undefined)target.delete(entityId);else target.set(entityId,last.before as any);
+ const inverse={id:randomUUID(),entityType,entityId,action:"update" as const,actorId:"undo",timestamp:new Date().toISOString(),before:last.after,after:last.before,metadata:{undoOf:last.id}};
+ store.audit.push(inverse); return last;
 }
 export function redoLastAudit(store:CatalogStore,entityType:string,entityId:string){
- const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId);
- const last=events.at(-1); if(!last||last.after===undefined)throw new Error("No redoable audit event found");
+ const undos=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId&&x.metadata?.undoOf);
+ const undo=undos.at(-1); if(!undo)throw new Error("No undone audit event found");
+ const original=store.audit.find(x=>x.id===undo.metadata?.undoOf); if(!original||original.after===undefined)throw new Error("No redoable audit event found");
  const target=entityType==="pump_configuration"?store.configurations:entityType==="pump_model"?store.models:entityType==="pump_series"?store.series:entityType==="motor"?store.motors:null;
  if(!target)throw new Error("Entity type is not redoable");
- target.set(entityId,last.after as any); return last;
+ target.set(entityId,original.after as any);
+ store.audit.push({id:randomUUID(),entityType,entityId,action:"update",actorId:"redo",timestamp:new Date().toISOString(),before:undo.after,after:original.after,metadata:{redoOf:original.id}});
+ return original;
 }
 export function recordAudit(store:CatalogStore,event:AuditEvent){store.audit.push(event)}
 export async function recordAuditPersistent(store:CatalogStore,event:AuditEvent){recordAudit(store,event);if(store.pool)await store.pool.query("INSERT INTO audit_events(id,entity_type,entity_id,action,actor_id,timestamp,before_json,after_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",[event.id,event.entityType,event.entityId,event.action,event.actorId,event.timestamp,event.before===undefined?null:JSON.stringify(event.before),event.after===undefined?null:JSON.stringify(event.after)])}
