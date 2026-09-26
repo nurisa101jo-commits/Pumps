@@ -34,7 +34,7 @@ pnpm install
 ```
 
 ### 3. Quick UI check — no database required
-The API can run in memory for a quick inspection:
+The API can run in memory for a quick inspection. Set `SEED_DEMO=true` in `.env` to load a development-only sample pump:
 
 ```bash
 pnpm dev
