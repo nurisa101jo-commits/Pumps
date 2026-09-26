@@ -1,6 +1,6 @@
 import type {ExtractedPumpCatalog,ExtractedConfiguration,ExtractedCurve,ExtractedDimensions,ExtractedMotor,ExtractedValue} from "./catalog-schema.js";
 export type ExtractedOption={code:ExtractedValue<string>;name:ExtractedValue<string>;description?:ExtractedValue<string>};
-export type ImportScope="catalog"|"curves"|"dimensions"|"motors"|"materials"|"seals"|"configurations";
+export type ImportScope="catalog"|"curves"|"dimensions"|"motors"|"materials"|"seals"|"configurations"|"project";
 export type TargetedExtraction={scope:ImportScope;catalog?:Partial<ExtractedPumpCatalog>;configurations?:ExtractedConfiguration[];curves?:ExtractedCurve[];dimensions?:ExtractedDimensions[];motors?:ExtractedMotor[];materials?:ExtractedOption[];seals?:ExtractedOption[]};
 export function validateTargetedScope(scope:ImportScope,data:any){
  if(!data||typeof data!=="object")throw new Error("Targeted extraction must return an object");
@@ -12,7 +12,8 @@ export function validateTargetedScope(scope:ImportScope,data:any){
   motors:["motors"],
   materials:["materials"],
   seals:["seals"],
-  configurations:["configurations"]
+  configurations:["configurations"],
+  project:["project","dutyPoints","customer","title","application"]
  };
  const keys=Object.keys(data).filter(k=>k!=="scope");
  for(const key of keys)if(!allowed[scope].includes(key))throw new Error("AI returned data outside requested import scope: "+key);
