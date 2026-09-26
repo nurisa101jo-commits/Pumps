@@ -23,6 +23,33 @@ export function redoLastAudit(store:CatalogStore,entityType:string,entityId:stri
 export function recordAudit(store:CatalogStore,event:AuditEvent){store.audit.push(event)}
 export function snapshotCatalog(store:CatalogStore){return{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()]}}
 export function restoreCatalogSnapshot(store:CatalogStore,snapshot:any){store.series=new Map(snapshot.series.map((x:any)=>[x.id,x]));store.models=new Map(snapshot.models.map((x:any)=>[x.id,x]));store.motors=new Map(snapshot.motors.map((x:any)=>[x.id,x]));store.configurations=new Map(snapshot.configurations.map((x:any)=>[x.id,x]));store.dimensions=new Map(snapshot.dimensions.map((x:any)=>[x.id,x]));store.curves=new Map(snapshot.curves.map((x:any)=>[x.id,x]))}
+export async function restoreCatalogToDatabase(store:CatalogStore,snapshot:any){
+ if(!store.pool)return;
+ const required=["series","models","motors","configurations","dimensions","curves","rules"];
+ for(const key of required)if(!Array.isArray(snapshot?.[key]))throw new Error("Invalid catalog snapshot."+key);
+ const client=await store.pool.connect();
+ try{
+  await client.query("BEGIN");
+  await client.query("DELETE FROM curve_points");
+  await client.query("DELETE FROM performance_curves");
+  await client.query("DELETE FROM dimensions");
+  await client.query("DELETE FROM pump_configurations");
+  await client.query("DELETE FROM pump_models");
+  await client.query("DELETE FROM pump_series");
+  await client.query("DELETE FROM motors");
+  await client.query("DELETE FROM engineering_rules");
+  for(const x of snapshot.series)await client.query("INSERT INTO pump_series(id,code,name,description) VALUES($1,$2,$3,$4)",[x.id,x.code,x.name,x.description??null]);
+  for(const x of snapshot.models)await client.query("INSERT INTO pump_models(id,series_id,code,name) VALUES($1,$2,$3,$4)",[x.id,x.seriesId,x.code,x.name]);
+  for(const x of snapshot.motors)await client.query("INSERT INTO motors(id,power_kw,voltage_v,phase,frequency_hz,speed_rpm) VALUES($1,$2,$3,$4,$5,$6)",[x.id,x.powerKw,x.voltageV??null,x.phase??null,x.frequencyHz??null,x.speedRpm??null]);
+  for(const x of snapshot.configurations)await client.query("INSERT INTO pump_configurations(id,model_id,code,motor_id,seal,connection,materials_json,weight_kg,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[x.id,x.modelId,x.code,x.motorId,x.seal??null,x.connection??null,JSON.stringify(x.materials??{}),x.weightKg??null,x.active!==false]);
+  for(const x of snapshot.dimensions)await client.query("INSERT INTO dimensions(id,configuration_id,length_mm,width_mm,height_mm,weight_kg) VALUES($1,$2,$3,$4,$5,$6)",[x.id,x.configurationId,x.lengthMm??null,x.widthMm??null,x.heightMm??null,x.weightKg??null]);
+  for(const x of snapshot.curves){await client.query("INSERT INTO performance_curves(id,configuration_id,kind,unit,speed_rpm,frequency_hz,source_id) VALUES($1,$2,$3,$4,$5,$6,$7)",[x.id,x.configurationId,x.kind,x.unit,x.speedRpm,x.frequencyHz,x.sourceId??null]);for(const p of x.points??[])await client.query("INSERT INTO curve_points(id,curve_id,q,value) VALUES($1,$2,$3,$4)",[randomUUID(),x.id,p.q,p.value])}
+  for(const x of snapshot.rules)await client.query("INSERT INTO engineering_rules(id,code,name,enabled,severity,kind,expression,parameters_json,configuration_ids_json,option_kind,option_ids_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",[x.id,x.code,x.name,x.enabled,x.severity,x.kind,x.expression??"",JSON.stringify(x.parameters??{}),JSON.stringify(x.configurationIds??null),x.optionKind??null,JSON.stringify(x.optionIds??null)]);
+  await client.query("COMMIT");
+  await loadCatalog(store);
+ }catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}
+}
+
 export async function persistCatalogItem(store:CatalogStore,kind:"series"|"model"|"motor"|"configuration"|"dimension"|"curve",item:any){
  if(!store.pool)return;
  const q=store.pool;
