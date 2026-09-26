@@ -37,6 +37,20 @@ export async function addDutyPoint(store:ProjectStore,point:ProjectDutyPoint){
   store.dutyPoints.set(point.id,point); return point;
 }
 
+export async function replaceDutyPoints(store:ProjectStore,projectId:string,points:Array<Omit<ProjectDutyPoint,"id"|"projectId">>){
+  if(!store.projects.has(projectId))throw new Error("projectId does not exist");
+  if(points.length===0)throw new Error("At least one duty point is required");
+  for(const point of points)if(point.q<=0||point.head<=0)throw new Error("Flow and head must be positive");
+  if(store.pool){
+    await store.pool.query("DELETE FROM project_duty_points WHERE project_id=$1",[projectId]);
+    for(const point of points)await store.pool.query(`INSERT INTO project_duty_points(id,project_id,label,q,head,efficiency,npshr,power_kw) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[randomUUID(),projectId,point.label??null,point.q,point.head,point.efficiency??null,point.npshr??null,point.powerKw??null]);
+  }
+  for(const [id,point] of store.dutyPoints)if(point.projectId===projectId)store.dutyPoints.delete(id);
+  const created=points.map(point=>({id:randomUUID(),projectId,...point}));
+  for(const point of created)store.dutyPoints.set(point.id,point);
+  return created;
+}
+
 export async function selectConfiguration(store:ProjectStore,selection:ProjectSelection){
   if(!store.projects.has(selection.projectId))throw new Error("projectId does not exist");
   if(store.pool){
