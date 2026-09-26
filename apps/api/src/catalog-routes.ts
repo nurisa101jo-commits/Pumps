@@ -10,13 +10,13 @@ type AuthHooks={authenticate:(request:any,reply:any)=>unknown;requireRole:(...ro
 
 
 app.get("/api/v1/rules",async()=>[...store.rules.values()]);
-app.post("/api/v1/rules",async(req,reply)=>{try{const x=req.body as any;if(!x.code||!x.name||!x.kind)throw new Error("Rule code, name and kind are required");if([...store.rules.values()].some(r=>r.code===x.code))throw new Error("Duplicate rule code");const severity:"warning"|"error"=x.severity==="warning"?"warning":"error";const item={id:makeId(),code:x.code,name:x.name,enabled:x.enabled!==false,severity,kind:x.kind,expression:x.expression??"",parameters:x.parameters??{},configurationIds:x.configurationIds,optionKind:x.optionKind,optionIds:x.optionIds};if(store.pool)await store.pool.query("INSERT INTO engineering_rules(id,code,name,kind,severity,enabled,parameters_json) VALUES($1,$2,$3,$4,$5,$6,$7)",[item.id,item.code,item.name,item.kind,item.severity,item.enabled,JSON.stringify(item.parameters)]);store.rules.set(item.id,item);return reply.code(201).send(item)}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid rule"})}});
+app.post("/api/v1/rules",{preHandler:engineer},async(req,reply)=>{try{const x=req.body as any;if(!x.code||!x.name||!x.kind)throw new Error("Rule code, name and kind are required");if([...store.rules.values()].some(r=>r.code===x.code))throw new Error("Duplicate rule code");const severity:"warning"|"error"=x.severity==="warning"?"warning":"error";const item={id:makeId(),code:x.code,name:x.name,enabled:x.enabled!==false,severity,kind:x.kind,expression:x.expression??"",parameters:x.parameters??{},configurationIds:x.configurationIds,optionKind:x.optionKind,optionIds:x.optionIds};if(store.pool)await store.pool.query("INSERT INTO engineering_rules(id,code,name,kind,severity,enabled,parameters_json) VALUES($1,$2,$3,$4,$5,$6,$7)",[item.id,item.code,item.name,item.kind,item.severity,item.enabled,JSON.stringify(item.parameters)]);store.rules.set(item.id,item);return reply.code(201).send(item)}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid rule"})}});
 app.get("/api/v1/catalog/options/:kind",async(req,reply)=>{
  const kind=(req.params as any).kind as EngineeringOptionKind;
  if(!engineeringStore||!["material","seal","connection","impeller","accessory"].includes(kind))return reply.code(400).send({error:"Invalid option kind"});
  return [...engineeringStore.options.get(kind)!.values()];
 });
-app.post("/api/v1/catalog/options",async(req,reply)=>{
+app.post("/api/v1/catalog/options",{preHandler:engineer},async(req,reply)=>{
  try{
   if(!engineeringStore)return reply.code(503).send({error:"Engineering option store unavailable"});
   const x=req.body as any;
