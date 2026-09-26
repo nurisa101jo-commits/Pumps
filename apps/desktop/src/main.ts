@@ -14,13 +14,13 @@ function startApi(){
  if(!existsSync(server))throw new Error("Packaged API was not found");
  api=spawn(process.execPath,[server],{env:{...process.env,ELECTRON_RUN_AS_NODE:"1",PORT:String(apiPort),AUTH_REQUIRED:process.env.AUTH_REQUIRED??"true",MIGRATIONS_DIR:join(process.resourcesPath,"api","migrations")},stdio:"ignore",windowsHide:true});
 }
-async function waitForApi(){
- const deadline=Date.now()+30000;
- while(Date.now()<deadline){
-  try{const response=await fetch(`http://127.0.0.1:${apiPort}/health`);if(response.ok)return; }catch{}
-  await new Promise(r=>setTimeout(r,500));
- }
- throw new Error("API did not start within 30 seconds");
+function monitorApi(){
+ void (async()=>{
+  for(let attempt=0;attempt<120;attempt++){
+   try{const response=await fetch(`http://127.0.0.1:${apiPort}/health`);if(response.ok)return;}catch{}
+   await new Promise(r=>setTimeout(r,500));
+  }
+ })();
 }
 function startWeb(){
  const root=join(process.resourcesPath,"selection");
