@@ -6,7 +6,7 @@ const tableFor=(kind:EngineeringOptionKind)=>({material:"materials",seal:"seals"
 
 export type EngineeringOptionStore={options:Map<EngineeringOptionKind,Map<string,EngineeringOption>>;links:Map<string,Array<{kind:EngineeringOptionKind;optionId:string}>>;pool?:Pool | undefined};
 export function createEngineeringOptionStore(pool?:Pool | undefined):EngineeringOptionStore{
-  return{options:new Map(["material","seal","connection","impeller","accessory"].map(k=>[k,new Map()] as const)),links:new Map(),pool};
+  return{options:new Map<EngineeringOptionKind,Map<string,EngineeringOption>>(["material","seal","connection","impeller","accessory"].map(k=>[k,new Map<string,EngineeringOption>()])),links:new Map(),pool};
 }
 export async function loadEngineeringOptions(store:EngineeringOptionStore){
   if(!store.pool)return;
