@@ -39,6 +39,7 @@ async function createWindow(){
  const win=new BrowserWindow({width:1440,height:900,minWidth:1100,minHeight:700,webPreferences:{contextIsolation:true,nodeIntegration:false}});
  await win.loadURL(`http://127.0.0.1:${webPort}/`);
 }
+app.setAppUserModelId("com.company.pumps");
 app.whenReady().then(async()=>{
  try{startApi();await waitForApi();startWeb();await createWindow()}catch(error){await dialog.showMessageBox({type:"error",title:"Pumps Platform",message:"The application could not start.",detail:error instanceof Error?error.message:String(error)});app.quit()}
 });
