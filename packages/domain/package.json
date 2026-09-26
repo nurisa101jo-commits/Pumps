@@ -20,6 +20,7 @@
     "./project": "./dist/project.js",
     "./selection-sheet": "./dist/selection-sheet.js",
     "./configuration-options": "./dist/configuration-options.js",
-    "./source": "./dist/source.js"
+    "./source": "./dist/source.js",
+    "./ai": "./dist/ai.js"
   }
 }
