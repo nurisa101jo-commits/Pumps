@@ -1,0 +1,31 @@
+name: Windows Release
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm -r build
+      - run: pnpm --filter @pumps/desktop build
+      - run: pnpm --filter @pumps/desktop package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pumps-platform-windows
+          path: apps/desktop/release/*
+          if-no-files-found: error
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/desktop/release/*
