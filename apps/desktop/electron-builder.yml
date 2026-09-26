@@ -1,0 +1,22 @@
+appId: com.company.pumps
+productName: Pumps Platform
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+extraResources:
+  - from: dist/api
+    to: api
+  - from: dist/selection
+    to: selection
+win:
+  target:
+    - nsis
+    - portable
+  artifactName: Pumps-Platform-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
