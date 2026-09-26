@@ -10,7 +10,7 @@ export function assertUnique(store:CatalogStore,collection:keyof Pick<CatalogSto
 export function undoLastAudit(store:CatalogStore,entityType:string,entityId:string){
  const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId&&!x.metadata?.undoOf&&!x.metadata?.redoOf);
  const last=events.at(-1); if(!last)throw new Error("No reversible audit event found");
- const target=entityType==="pump_configuration"?store.configurations:entityType==="pump_model"?store.models:entityType==="pump_series"?store.series:entityType==="motor"?store.motors:null;
+ const target=entityType==="pump_configuration"?store.configurations:entityType==="pump_model"?store.models:entityType==="pump_series"?store.series:entityType==="motor"?store.motors:entityType==="performance_curve"?store.curves:entityType==="dimension"?store.dimensions:null;
  if(!target)throw new Error("Entity type is not reversible");
  if(last.before===undefined)target.delete(entityId);else target.set(entityId,last.before as any);
  const inverse={id:randomUUID(),entityType,entityId,action:"update" as const,actorId:"undo",timestamp:new Date().toISOString(),before:last.after,after:last.before,metadata:{undoOf:last.id}};
