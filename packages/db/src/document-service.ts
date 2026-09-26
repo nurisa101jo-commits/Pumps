@@ -14,6 +14,6 @@ export async function ensureDocument(store:DocumentStore,id:string,input:Omit<Pr
  const existing=store.documents.get(id);
  if(existing)return existing;
  const item={id,...input};
- if(store.pool)await store.pool.query("INSERT INTO product_documents(id,name,file_name,mime_type,storage_key,checksum,uploaded_at,uploaded_by,description) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[id,item.name,item.fileName,item.mimeType,item.storageKey,item.checksum??null,item.uploadedAt,item.uploadedBy,item.description??null]);
+ if(store.pool)await store.pool.query("INSERT INTO product_documents(id,name,file_name,mime_type,storage_key,checksum,uploaded_at,uploaded_by,description,size_bytes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO NOTHING",[id,item.name,item.fileName,item.mimeType,item.storageKey,item.checksum??null,item.uploadedAt,item.uploadedBy,item.description??null]);
  store.documents.set(id,item);return item;
 }
