@@ -54,9 +54,9 @@ function App(){
  const[selectionResult,setSelectionResult]=useState<any>(null);
  const selected=useMemo(()=>configs.find(item=>item.id===configId),[configs,configId]);
 
- useEffect(()=>{get<Series[]>("/api/v1/catalog/series").then(items=>{setSeries(items);setSelectedSeries(items[0]?.id??"")}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
- useEffect(()=>{if(!selectedSeries){setModels([]);return}get<Model[]>("/api/v1/catalog/models?seriesId="+encodeURIComponent(selectedSeries)).then(items=>{setModels(items);setSelectedModel(items[0]?.id??"")}).catch(e=>setError(e.message))},[selectedSeries]);
- useEffect(()=>{if(!selectedModel){setConfigs([]);return}get<Config[]>("/api/v1/catalog/configurations?modelId="+encodeURIComponent(selectedModel)).then(items=>{setConfigs(items);setConfigId(items[0]?.id??"")}).catch(e=>setError(e.message))},[selectedModel]);
+ useEffect(()=>{get<Series[]>("/api/v1/catalog/public/series").then(items=>{setSeries(items);setSelectedSeries(items[0]?.id??"")}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ useEffect(()=>{if(!selectedSeries){setModels([]);return}get<Model[]>("/api/v1/catalog/public/models?seriesId="+encodeURIComponent(selectedSeries)).then(items=>{setModels(items);setSelectedModel(items[0]?.id??"")}).catch(e=>setError(e.message))},[selectedSeries]);
+ useEffect(()=>{if(!selectedModel){setConfigs([]);return}get<Config[]>("/api/v1/catalog/public/configurations?modelId="+encodeURIComponent(selectedModel)).then(items=>{setConfigs(items);setConfigId(items[0]?.id??"")}).catch(e=>setError(e.message))},[selectedModel]);
 
  async function ensureProject(){
   if(projectId)return projectId;
