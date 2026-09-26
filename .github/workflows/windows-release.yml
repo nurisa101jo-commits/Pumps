@@ -4,11 +4,13 @@ permissions:
 on:
   push:
     branches: ["main"]
-    tags: ["v*.*.*"]
   workflow_dispatch:
 jobs:
   windows:
     runs-on: windows-latest
+    concurrency:
+      group: pumps-windows-release
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v6
@@ -22,30 +24,27 @@ jobs:
       - run: pnpm -r build
       - run: pnpm --filter @pumps/desktop build
       - run: pnpm --filter @pumps/desktop package
-      - name: Tag 1.0.0 release
-        if: github.ref == 'refs/heads/main'
+      - name: Create 1.0.1 tag
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch --tags --force
-          if ! git rev-parse refs/tags/v1.0.1 >/dev/null 2>&1; then
-            git tag -a v1.0.1 "$GITHUB_SHA" -m "Pumps Platform 1.0.1"
-            git push origin v1.0.1
-          fi
+          git tag -fa v1.0.1 "$GITHUB_SHA" -m "Pumps Platform 1.0.1"
+          git push origin refs/tags/v1.0.1 --force
       - uses: actions/upload-artifact@v4
         with:
           name: pumps-platform-windows
           path: apps/desktop/release/*
           if-no-files-found: error
       - name: Publish GitHub release
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.1
           name: Pumps Platform 1.0.1
           body: |
-            First complete Windows release of Pumps Platform.
+            Pumps Platform 1.0.1.
 
-            Includes the Customer Selection Portal, Engineering Admin Portal, hydraulic selection engine, AI-assisted ingestion, catalog/rules management, backups, audit, and Windows desktop packaging.
+            Fixes Windows desktop startup so the UI does not fail because the local API health check takes longer than 30 seconds.
           files: apps/desktop/release/*
+          overwrite_files: true
