@@ -12,7 +12,8 @@
     "@pumps/domain": "workspace:*",
     "@pumps/selection-engine": "workspace:*",
     "fastify": "^5.4.0",
-    "@pumps/ai": "workspace:*"
+    "@pumps/ai": "workspace:*",
+    "@pumps/db": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
