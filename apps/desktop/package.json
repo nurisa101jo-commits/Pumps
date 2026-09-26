@@ -10,7 +10,11 @@
     "dist": "electron-builder --win"
   },
   "dependencies": {
-    "electron": "^38.2.0"
+    "electron": "^38.2.0",
+    "@pumps/admin": "workspace:*",
+    "@pumps/selection": "workspace:*",
+    "@pumps/api": "workspace:*",
+    "@pumps/db": "workspace:*"
   },
   "devDependencies": {
     "electron-builder": "^26.0.12",
