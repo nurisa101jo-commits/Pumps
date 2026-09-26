@@ -23,12 +23,12 @@ export function selectFromCatalog(request:SelectionRequest,catalog:CatalogConfig
   if(request.constraints?.minEfficiency!==undefined&&dutyResults.some(x=>x.efficiency===undefined||x.efficiency<request.constraints!.minEfficiency!)){warnings.push(`Configuration ${c.id} rejected because efficiency data does not satisfy the requested minimum`);return []}
   const configuration={id:c.id,modelId:c.modelId,code:c.id,motorId:c.motorId} as PumpConfiguration;
   const ruleSet=c.rules??[];
-  const evaluations=dutyResults.flatMap(d=>evaluateRules({configuration,motor:c.motor!,flow:d.q,temperatureC:request.fluid?.temperatureC,fluidName:request.fluid?.name,application:request.application,npshr:d.npshr,optionIds:c.optionIds},ruleSet));
+  const evaluations=dutyResults.flatMap(d=>evaluateRules({configuration,motor:c.motor!,flow:d.q,...(request.fluid?.temperatureC!==undefined?{temperatureC:request.fluid.temperatureC}:{}),...(request.fluid?.name!==undefined?{fluidName:request.fluid.name}:{}),...(request.application!==undefined?{application:request.application}:{}),...(d.npshr!==undefined?{npshr:d.npshr}:{}),...(c.optionIds!==undefined?{optionIds:c.optionIds}:{})},ruleSet));
   const failed=evaluations.filter(x=>!x.passed);
   if(failed.some(x=>x.severity==="error")){warnings.push(`Configuration ${c.id} rejected by engineering rules: ${failed.map(x=>x.message).join("; ")}`);return []}
   for(const item of failed)warnings.push(`Configuration ${c.id}: ${item.message}`);
   const score=dutyResults.reduce((s,x)=>s+x.headError,0)/dutyResults.length;
-  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults:dutyResults.map((d)=>({...d,ruleWarnings:evaluations.filter(e=>!e.passed&&e.severity==="warning").map(e=>e.message)}))}]
+  return[{configurationId:c.id,modelId:c.modelId,motorId:c.motorId,score,dutyResults:dutyResults.map(d=>({q:d.q,requiredHead:d.requiredHead,availableHead:d.availableHead,headError:d.headError,hydraulicPowerKw:d.hydraulicPowerKw,motorPowerKw:d.motorPowerKw,operatingPointValid:d.operatingPointValid,...(d.efficiency!==undefined?{efficiency:d.efficiency}:{}),...(d.npshr!==undefined?{npshr:d.npshr}:{}),...(d.powerKw!==undefined?{powerKw:d.powerKw}:{}),...(d.motorLoadRatio!==undefined?{motorLoadRatio:d.motorLoadRatio}:{}),...(evaluations.some(e=>!e.passed&&e.severity==="warning")?{ruleWarnings:evaluations.filter(e=>!e.passed&&e.severity==="warning").map(e=>e.message)}:{})))}]}]
  });
  candidates.sort((a,b)=>a.score-b.score);
  return{candidates,warnings,engineVersion:"0.6.0"}
