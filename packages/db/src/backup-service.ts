@@ -13,7 +13,7 @@ export async function createCatalogBackup(store:CatalogStore,type:"manual"|"auto
  try{
   await mkdir(directory,{recursive:true});
   const payload={version:3,createdAt:startedAt,catalog:{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()],rules:[...store.rules.values()]},engineering:engineering?{options:Object.fromEntries([...engineering.options.entries()].map(([kind,map])=>[kind,[...map.values()]])),links:[...engineering.links.entries()]}:undefined,documents:documents?{items:[...documents.documents.values()],references:[...documents.references.values()],links:documents.links}:undefined,audit:store.audit};
-  const location=join(directory,id+".json");const text=JSON.stringify(payload);const checksum=createHash("sha256").update(text).digest("hex");
+  const location=join(directory,id+".json");const content=JSON.stringify(payload);const checksum=createHash("sha256").update(content).digest("hex");const text=JSON.stringify({...payload,integrity:{algorithm:"sha256",checksum}});
   await writeFile(location,text,"utf8");
   record.status="completed";record.completedAt=new Date().toISOString();record.location=location;record.checksum=checksum;
   return record;
@@ -30,6 +30,7 @@ export async function readCatalogBackup(fileName:string,directory=process.env.BA
 
 export async function restoreCatalogBackup(store:CatalogStore,backup:any,engineering?:EngineeringOptionStore,documents?:DocumentStore){
  if(!backup||!([1,2,3] as number[]).includes(backup.version)||!backup.catalog)throw new Error("Invalid catalog backup");
+ if(backup.integrity?.algorithm==="sha256"&&typeof backup.integrity.checksum==="string"){const copy={...backup};delete copy.integrity;const actual=createHash("sha256").update(JSON.stringify(copy)).digest("hex");if(actual!==backup.integrity.checksum)throw new Error("Backup checksum verification failed");}
  const required=["series","models","motors","configurations","dimensions","curves","rules"];
  for(const key of required)if(!Array.isArray(backup.catalog[key]))throw new Error("Invalid backup catalog."+key);
  const snapshot=backup.catalog;
