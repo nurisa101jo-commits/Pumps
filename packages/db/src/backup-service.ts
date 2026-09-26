@@ -10,7 +10,7 @@ export async function createCatalogBackup(store:CatalogStore,type:"manual"|"auto
  const id=randomUUID(),startedAt=new Date().toISOString(),record:BackupRecord={id,type,startedAt,status:"running"};
  try{
   await mkdir(directory,{recursive:true});
-  const payload={version:1,createdAt:startedAt,catalog:{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()],rules:[...store.rules.values()]},audit:store.audit};
+  const payload={version:2,createdAt:startedAt,catalog:{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()],rules:[...store.rules.values()]},audit:store.audit};
   const location=join(directory,id+".json");const text=JSON.stringify(payload);const checksum=createHash("sha256").update(text).digest("hex");
   await writeFile(location,text,"utf8");
   record.status="completed";record.completedAt=new Date().toISOString();record.location=location;record.checksum=checksum;
@@ -27,7 +27,7 @@ export async function readCatalogBackup(fileName:string,directory=process.env.BA
 }
 
 export async function restoreCatalogBackup(store:CatalogStore,backup:any){
- if(!backup||backup.version!==1||!backup.catalog)throw new Error("Invalid catalog backup");
+ if(!backup||!([1,2] as number[]).includes(backup.version)||!backup.catalog)throw new Error("Invalid catalog backup");
  const required=["series","models","motors","configurations","dimensions","curves","rules"];
  for(const key of required)if(!Array.isArray(backup.catalog[key]))throw new Error("Invalid backup catalog."+key);
  const snapshot=backup.catalog;
