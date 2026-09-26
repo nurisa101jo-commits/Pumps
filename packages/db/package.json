@@ -23,7 +23,8 @@
     "./ingestion-service": "./dist/ingestion-service.js",
     "./publication-service": "./dist/publication-service.js",
     "./migration-runner": "./dist/migration-runner.js",
-    "./backup-service": "./dist/backup-service.js"
+    "./backup-service": "./dist/backup-service.js",
+    "./demo-seed": "./dist/demo-seed.js"
   },
   "dependencies": {
     "@pumps/domain": "workspace:*",
