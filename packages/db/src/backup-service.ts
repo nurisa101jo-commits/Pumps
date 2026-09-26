@@ -32,6 +32,7 @@ export async function restoreCatalogBackup(store:CatalogStore,backup:any,enginee
  const required=["series","models","motors","configurations","dimensions","curves","rules"];
  for(const key of required)if(!Array.isArray(backup.catalog[key]))throw new Error("Invalid backup catalog."+key);
  const snapshot=backup.catalog;
+ if(engineering&&backup.engineering?.options){for(const kind of ["material","seal","connection","impeller","accessory"] as const){const values=Array.isArray(backup.engineering.options[kind])?backup.engineering.options[kind]:[];const map=engineering.options.get(kind)!;map.clear();for(const x of values)map.set(x.id,{...x,kind});}engineering.links=new Map((Array.isArray(backup.engineering.links)?backup.engineering.links:[]));}
  store.series=new Map(snapshot.series.map((x:any)=>[x.id,x]));
  store.models=new Map(snapshot.models.map((x:any)=>[x.id,x]));
  store.motors=new Map(snapshot.motors.map((x:any)=>[x.id,x]));
