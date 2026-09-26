@@ -40,7 +40,7 @@ async function start(){
  if(process.env.SEED_DEMO==="true"){await seedDemoCatalog(catalogStore,engineeringStore)}
  registerCatalogRoutes(app,catalogStore,engineeringStore,{authenticate,requireRole,actorOf});
  const buildSelectionCatalog=()=>[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries(["material","seal","connection","impeller","accessory"].map(kind=>[kind,(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===kind).map(x=>x.optionId)])),rules:[...catalogStore.rules.values()].filter(rule=>rule.enabled&&(!rule.configurationIds||rule.configurationIds.includes(c.id))),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));
- registerProjectRoutes(app,projectStore,buildSelectionCatalog);
+ registerProjectRoutes(app,projectStore,()=>buildSelectionCatalog());
  app.get("/health",async()=>({status:"ok",service:"pumps-api",version:"0.6.0",database:pool?(databaseReady?"ready":"not-ready"):"memory"}));
  
 
