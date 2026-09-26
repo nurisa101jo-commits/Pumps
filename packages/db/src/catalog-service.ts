@@ -8,10 +8,10 @@ export function createCatalogStore(pool?:Pool | undefined):CatalogStore{return{s
 export function assertUnique(store:CatalogStore,collection:keyof Pick<CatalogStore,"series"|"models"|"motors"|"configurations"|"curves"|"dimensions">,field:string,value:unknown,ignoreId?:string){for(const [id,item] of store[collection])if(id!==ignoreId&&item[field]===value)throw new Error("Duplicate "+collection+"."+field+": "+String(value))}
 export function undoLastAudit(store:CatalogStore,entityType:string,entityId:string){
  const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId);
- const last=events.at(-1); if(!last||last.before===undefined)throw new Error("No reversible audit event found");
+ const last=events.at(-1); if(!last)throw new Error("No reversible audit event found");
  const target=entityType==="pump_configuration"?store.configurations:entityType==="pump_model"?store.models:entityType==="pump_series"?store.series:entityType==="motor"?store.motors:null;
  if(!target)throw new Error("Entity type is not reversible");
- target.set(entityId,last.before as any); return last;
+ if(last.before===undefined)target.delete(entityId);else target.set(entityId,last.before as any); return last;
 }
 export function redoLastAudit(store:CatalogStore,entityType:string,entityId:string){
  const events=store.audit.filter(x=>x.entityType===entityType&&x.entityId===entityId);
