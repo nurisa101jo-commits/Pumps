@@ -94,7 +94,7 @@ function App(){
    <label>Project Number<input value={project.number} onChange={event=>setProject({...project,number:event.target.value})}/></label>
    <label>Customer<input value={project.customer} onChange={event=>setProject({...project,customer:event.target.value})}/></label>
    <label>Project Title<input value={project.title} onChange={event=>setProject({...project,title:event.target.value})}/></label>
-   <button className="primary" onClick={async()=>{try{await ensureProject();setStep(2)}catch(e){setError(e instanceof Error?e.message:"Failed to create project")}}>Continue</button>
+   <button className="primary" onClick={async()=>{try{await ensureProject();setStep(2)}catch(e){setError(e instanceof Error?e.message:"Failed to create project")}}}>Continue</button>
   </section>}
 
   {step===2&&<section className="panel">
