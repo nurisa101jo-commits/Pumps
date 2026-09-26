@@ -94,7 +94,7 @@ export async function publishCandidate(ingestion:IngestionStore,publication:Publ
  if(c.status!=="approved")throw new Error("Candidate must be approved before publication");
  const approval=[...ingestion.approvals.values()].find(x=>x.candidateId===candidateId);if(!approval)throw new Error("Approval record not found");
  if(input.entityType==="catalog"){
-  const linkSource=async(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>{let sourceId=(source as any).id as string|undefined;if(!sourceId){const created=await createSourceReference(documents,{documentId:source.documentId,page:source.page,table:source.table,region:source.region,excerpt:source.excerpt});sourceId=created.id;}await linkEntitySource(documents,{entityType,entityId,sourceReferenceId:sourceId,fieldName});};
+  const linkSource=async(entityType:string,entityId:string,fieldName:string,source:SourceReference)=>{let sourceId=(source as any).id as string|undefined;if(!sourceId){const created=await createSourceReference(documents,{documentId:source.documentId,...(source.page!==undefined?{page:source.page}:{}),...(source.table!==undefined?{table:source.table}:{}),...(source.region!==undefined?{region:source.region}:{}),...(source.excerpt!==undefined?{excerpt:source.excerpt}:{})});sourceId=created.id;}await linkEntitySource(documents,{entityType,entityId,sourceReferenceId:sourceId,fieldName});};
   const created=await publishCatalogPayload(ingestion,catalog,engineering,c,input.publishedBy,linkSource);
   const id=randomUUID(),publishedAt=new Date().toISOString();
   const item={id,candidateId,approvedRecordId:approval.id,publishedBy:input.publishedBy,publishedAt,entityType:"catalog",entityId:created.series.id,createdEntity:true,payload:created};
