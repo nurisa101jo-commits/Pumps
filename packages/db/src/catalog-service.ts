@@ -27,6 +27,52 @@ export function redoLastAudit(store:CatalogStore,entityType:string,entityId:stri
  return original;
 }
 export function recordAudit(store:CatalogStore,event:AuditEvent){store.audit.push(event)}
+export async function persistReversibleStateAndAudit(store:CatalogStore,event:AuditEvent){
+ if(!store.pool){recordAudit(store,event);return}
+ const client=await store.pool.connect();
+ try{
+  await client.query("BEGIN");
+  await persistEntityState(client,event.entityType,event.entityId,event.after);
+  await client.query("INSERT INTO audit_events(id,entity_type,entity_id,action,actor_id,timestamp,before_json,after_json,metadata_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[event.id,event.entityType,event.entityId,event.action,event.actorId,event.timestamp,event.before===undefined?null:JSON.stringify(event.before),event.after===undefined?null:JSON.stringify(event.after),event.metadata===undefined?null:JSON.stringify(event.metadata)]);
+  await client.query("COMMIT");
+  store.audit.push(event);
+ }catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}
+}
+async function persistEntityState(client:any,entityType:string,entityId:string,state:any){
+ if(entityType==="pump_series"){
+  await client.query("DELETE FROM pump_series WHERE id=$1",[entityId]);
+  if(state)await client.query("INSERT INTO pump_series(id,code,name,description) VALUES($1,$2,$3,$4)",[state.id,state.code,state.name,state.description??null]);
+  return;
+ }
+ if(entityType==="pump_model"){
+  await client.query("DELETE FROM pump_models WHERE id=$1",[entityId]);
+  if(state)await client.query("INSERT INTO pump_models(id,series_id,code,name) VALUES($1,$2,$3,$4)",[state.id,state.seriesId,state.code,state.name]);
+  return;
+ }
+ if(entityType==="motor"){
+  await client.query("DELETE FROM motors WHERE id=$1",[entityId]);
+  if(state)await client.query("INSERT INTO motors(id,power_kw,voltage_v,phase,frequency_hz,speed_rpm) VALUES($1,$2,$3,$4,$5,$6)",[state.id,state.powerKw,state.voltageV??null,state.phase??null,state.frequencyHz??null,state.speedRpm??null]);
+  return;
+ }
+ if(entityType==="pump_configuration"){
+  await client.query("DELETE FROM configuration_options WHERE configuration_id=$1",[entityId]);
+  await client.query("DELETE FROM pump_configurations WHERE id=$1",[entityId]);
+  if(state)await client.query("INSERT INTO pump_configurations(id,model_id,code,motor_id,seal,connection,materials_json,weight_kg,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[state.id,state.modelId,state.code,state.motorId,state.seal??null,state.connection??null,JSON.stringify(state.materials??{}),state.weightKg??null,state.active!==false]);
+  return;
+ }
+ if(entityType==="dimension"){
+  await client.query("DELETE FROM dimensions WHERE id=$1",[entityId]);
+  if(state)await client.query("INSERT INTO dimensions(id,configuration_id,length_mm,width_mm,height_mm,weight_kg) VALUES($1,$2,$3,$4,$5,$6)",[state.id,state.configurationId,state.lengthMm??null,state.widthMm??null,state.heightMm??null,state.weightKg??null]);
+  return;
+ }
+ if(entityType==="performance_curve"){
+  await client.query("DELETE FROM curve_points WHERE curve_id=$1",[entityId]);
+  await client.query("DELETE FROM performance_curves WHERE id=$1",[entityId]);
+  if(state){await client.query("INSERT INTO performance_curves(id,configuration_id,kind,unit,speed_rpm,frequency_hz,source_id) VALUES($1,$2,$3,$4,$5,$6,$7)",[state.id,state.configurationId,state.kind,state.unit,state.speedRpm,state.frequencyHz,state.sourceId??null]);for(const p of state.points??[])await client.query("INSERT INTO curve_points(id,curve_id,q,value) VALUES($1,$2,$3,$4)",[randomUUID(),state.id,p.q,p.value])}
+  return;
+ }
+ throw new Error("Entity type is not persistently reversible: "+entityType);
+}
 export async function recordAuditPersistent(store:CatalogStore,event:AuditEvent){recordAudit(store,event);if(store.pool)await store.pool.query("INSERT INTO audit_events(id,entity_type,entity_id,action,actor_id,timestamp,before_json,after_json,metadata_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[event.id,event.entityType,event.entityId,event.action,event.actorId,event.timestamp,event.before===undefined?null:JSON.stringify(event.before),event.after===undefined?null:JSON.stringify(event.after),event.metadata===undefined?null:JSON.stringify(event.metadata)])}
 export function snapshotCatalog(store:CatalogStore){return{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()]}}
 export function restoreCatalogSnapshot(store:CatalogStore,snapshot:any){store.series=new Map(snapshot.series.map((x:any)=>[x.id,x]));store.models=new Map(snapshot.models.map((x:any)=>[x.id,x]));store.motors=new Map(snapshot.motors.map((x:any)=>[x.id,x]));store.configurations=new Map(snapshot.configurations.map((x:any)=>[x.id,x]));store.dimensions=new Map(snapshot.dimensions.map((x:any)=>[x.id,x]));store.curves=new Map(snapshot.curves.map((x:any)=>[x.id,x]))}
