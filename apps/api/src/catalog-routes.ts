@@ -6,7 +6,10 @@ import type {EngineeringOptionKind} from "@pumps/domain/configuration-options";
 import type {CatalogStore} from "@pumps/db/catalog-service";
 const makeId=()=>crypto.randomUUID();
 function enrichConfiguration(store:CatalogStore,engineeringStore:EngineeringOptionStore|undefined,x:any){const links=engineeringStore?.links.get(x.id)??[];const options=links.map(link=>engineeringStore?.options.get(link.kind)?.get(link.optionId)).filter(Boolean);return{...x,model:store.models.get(x.modelId)??null,motor:store.motors.get(x.motorId)??null,dimensions:[...store.dimensions.values()].find(d=>d.configurationId===x.id)??null,curves:[...store.curves.values()].filter(c=>c.configurationId===x.id),options}}
-type AuthHooks={authenticate:(request:any,reply:any)=>unknown;requireRole:(...roles:any[])=>any;actorOf:(request:any)=>{id:string;role:string}};\nexport function registerCatalogRoutes(app:FastifyInstance,store:CatalogStore,engineeringStore?:EngineeringOptionStore,auth?:AuthHooks){\n const engineer=auth?.requireRole("admin","engineer");\n const actor=(req:any)=>auth?.actorOf(req)?.id??String(req.headers["x-actor-id"]??"system");
+type AuthHooks={authenticate:(request:any,reply:any)=>unknown;requireRole:(...roles:any[])=>any;actorOf:(request:any)=>{id:string;role:string}};
+export function registerCatalogRoutes(app:FastifyInstance,store:CatalogStore,engineeringStore?:EngineeringOptionStore,auth?:AuthHooks){
+ const engineer=auth?.requireRole("admin","engineer");
+ const actor=(req:any)=>auth?.actorOf(req)?.id??String(req.headers["x-actor-id"]??"system");
 
 
 app.get("/api/v1/rules",async()=>[...store.rules.values()]);
