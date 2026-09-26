@@ -16,6 +16,7 @@ import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,up
 import {createPublicationStore,loadPublications,publishCandidate} from "@pumps/db/publication-service";
 import {createCatalogBackup,listCatalogBackups,readCatalogBackup,restoreCatalogBackup} from "@pumps/db/backup-service";
 import {recordAuditPersistent,undoLastAudit,redoLastAudit} from "@pumps/db/catalog-service";
+import {seedDemoCatalog} from "@pumps/db/demo-seed";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -29,6 +30,7 @@ let databaseReady=false;
 
 async function start(){
  if(pool){await pingDatabase(pool);if(process.env.RUN_MIGRATIONS==="true")await runMigrations(pool,{directory:process.env.MIGRATIONS_DIR??"./packages/db/dist/migrations"});await loadCatalog(catalogStore);await loadProjects(projectStore);await loadEngineeringOptions(engineeringStore);await loadDocuments(documentStore);await loadIngestion(ingestionStore);await loadPublications(publicationStore);databaseReady=true}
+ if(process.env.SEED_DEMO==="true"){await seedDemoCatalog(catalogStore,engineeringStore)}
  registerCatalogRoutes(app,catalogStore,engineeringStore);
  const buildSelectionCatalog=()=>[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries(["material","seal","connection","impeller","accessory"].map(kind=>[kind,(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===kind).map(x=>x.optionId)])),rules:[...catalogStore.rules.values()].filter(rule=>rule.enabled&&(!rule.configurationIds||rule.configurationIds.includes(c.id))),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));
  registerProjectRoutes(app,projectStore,buildSelectionCatalog);
