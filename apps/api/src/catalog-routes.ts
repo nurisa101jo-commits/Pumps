@@ -11,6 +11,21 @@ export function registerCatalogRoutes(app:FastifyInstance,store:CatalogStore,eng
  const engineer=auth?.requireRole("admin","engineer");
  const actor=(req:any)=>auth?.actorOf(req)?.id??String(req.headers["x-actor-id"]??"system");
 
+function publishedConfigurationIds(store:CatalogStore){
+ const ids=new Set<string>();
+ for(const event of store.audit){
+  if(event.action==="publish_catalog_from_ingestion"){
+   for(const item of (event.after as any)?.configurations??[])if(item?.id)ids.add(item.id);
+  }
+  if(event.action==="publish_from_ingestion" && event.entityType==="configuration" && event.entityId)ids.add(event.entityId);
+ }
+ return ids;
+}
+function publicConfigurations(store:CatalogStore,engineeringStore:EngineeringOptionStore|undefined){
+ const ids=publishedConfigurationIds(store);
+ return [...store.configurations.values()].filter(x=>x.active!==false&&ids.has(x.id)).map(x=>enrichConfiguration(store,engineeringStore,x));
+}
+
 
 app.get("/api/v1/rules",async()=>[...store.rules.values()]);
 app.post("/api/v1/rules",{preHandler:engineer},async(req,reply)=>{try{const x=req.body as any;if(!x.code||!x.name||!x.kind)throw new Error("Rule code, name and kind are required");if([...store.rules.values()].some(r=>r.code===x.code))throw new Error("Duplicate rule code");const severity:"warning"|"error"=x.severity==="warning"?"warning":"error";const item={id:makeId(),code:x.code,name:x.name,enabled:x.enabled!==false,severity,kind:x.kind,expression:x.expression??"",parameters:x.parameters??{},configurationIds:x.configurationIds,optionKind:x.optionKind,optionIds:x.optionIds};if(store.pool)await store.pool.query("INSERT INTO engineering_rules(id,code,name,kind,severity,enabled,parameters_json) VALUES($1,$2,$3,$4,$5,$6,$7)",[item.id,item.code,item.name,item.kind,item.severity,item.enabled,JSON.stringify(item.parameters)]);store.rules.set(item.id,item);return reply.code(201).send(item)}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid rule"})}});
@@ -27,6 +42,28 @@ app.post("/api/v1/catalog/options",{preHandler:engineer},async(req,reply)=>{
   if(!x.code||!x.name)throw new Error("Option code and name are required");
   return reply.code(201).send(await createEngineeringOption(engineeringStore,{kind:x.kind,code:x.code,name:x.name,description:x.description,active:x.active!==false}));
  }catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid option"})}
+});
+app.get("/api/v1/catalog/public/series",async()=>{
+ const configs=publicConfigurations(store,engineeringStore);
+ const modelIds=new Set(configs.map(x=>x.modelId));
+ const seriesIds=new Set([...modelIds].map(id=>store.models.get(id)?.seriesId).filter(Boolean));
+ return [...store.series.values()].filter(x=>seriesIds.has(x.id));
+});
+app.get("/api/v1/catalog/public/models",async(req)=>{
+ const seriesId=(req.query as any)?.seriesId as string|undefined;
+ const configs=publicConfigurations(store,engineeringStore);
+ const modelIds=new Set(configs.map(x=>x.modelId));
+ return [...store.models.values()].filter(x=>modelIds.has(x.id)&&(!seriesId||x.seriesId===seriesId));
+});
+app.get("/api/v1/catalog/public/configurations",async(req)=>{
+ const modelId=(req.query as any)?.modelId as string|undefined;
+ return publicConfigurations(store,engineeringStore).filter(x=>!modelId||x.modelId===modelId);
+});
+app.get("/api/v1/catalog/public/configurations/:configurationId",async(req,reply)=>{
+ const id=(req.params as any).configurationId;
+ const x=publicConfigurations(store,engineeringStore).find(item=>item.id===id);
+ if(!x)return reply.code(404).send({error:"Published configuration not found"});
+ return x;
 });
 app.get("/api/v1/catalog/series",async()=>[...store.series.values()]);
 app.post("/api/v1/catalog/series",{preHandler:engineer},async(req,reply)=>{const x=req.body as any;const item={id:makeId(),...x};assertUnique(store,"series","code",item.code);store.series.set(item.id,item);await persistCatalogItem(store,"series",item);await recordAuditPersistent(store,{id:makeId(),entityType:"pump_series",entityId:item.id,action:"create",actorId:actor(req),timestamp:new Date().toISOString(),after:item});return reply.code(201).send(item)});
