@@ -2,6 +2,7 @@ import {mkdir,writeFile,readdir,readFile} from "node:fs/promises";
 import {join} from "node:path";
 import {randomUUID,createHash} from "node:crypto";
 import type {CatalogStore} from "./catalog-service";
+import {loadCatalog,restoreCatalogToDatabase} from "./catalog-service";
 
 export type BackupRecord={id:string;type:"manual"|"automatic";startedAt:string;completedAt?:string;status:"running"|"completed"|"failed";location?:string;checksum?:string};
 
@@ -37,5 +38,6 @@ export async function restoreCatalogBackup(store:CatalogStore,backup:any){
  store.dimensions=new Map(snapshot.dimensions.map((x:any)=>[x.id,x]));
  store.curves=new Map(snapshot.curves.map((x:any)=>[x.id,x])); store.rules=new Map(snapshot.rules.map((x:any)=>[x.id,x]));
  if(Array.isArray(backup.audit))store.audit=backup.audit;
+ if(store.pool){await restoreCatalogToDatabase(store,snapshot);await loadCatalog(store)}
  return {restoredAt:new Date().toISOString(),counts:Object.fromEntries(required.map(k=>[k,snapshot[k].length]))};
 }
