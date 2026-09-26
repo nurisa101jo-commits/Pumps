@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import type {Project,ProjectDutyPoint,ProjectSelection} from "@pumps/domain/project";
 import type {Pool} from "pg";
 
