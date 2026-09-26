@@ -1,0 +1,1 @@
+ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS size_bytes BIGINT;
