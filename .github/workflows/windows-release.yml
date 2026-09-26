@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
+          package-manager-cache: false
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm -r build
       - run: pnpm --filter @pumps/desktop build
