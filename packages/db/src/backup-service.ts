@@ -3,14 +3,15 @@ import {join} from "node:path";
 import {randomUUID,createHash} from "node:crypto";
 import type {CatalogStore} from "./catalog-service";
 import {loadCatalog,restoreCatalogToDatabase} from "./catalog-service";
+import type {EngineeringOptionStore} from "./engineering-options";
 
 export type BackupRecord={id:string;type:"manual"|"automatic";startedAt:string;completedAt?:string;status:"running"|"completed"|"failed";location?:string;checksum?:string};
 
-export async function createCatalogBackup(store:CatalogStore,type:"manual"|"automatic"="manual",directory=process.env.BACKUP_DIR??"./backups"){
+export async function createCatalogBackup(store:CatalogStore,type:"manual"|"automatic"="manual",directory=process.env.BACKUP_DIR??"./backups",engineering?:EngineeringOptionStore){
  const id=randomUUID(),startedAt=new Date().toISOString(),record:BackupRecord={id,type,startedAt,status:"running"};
  try{
   await mkdir(directory,{recursive:true});
-  const payload={version:2,createdAt:startedAt,catalog:{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()],rules:[...store.rules.values()]},audit:store.audit};
+  const payload={version:3,createdAt:startedAt,catalog:{series:[...store.series.values()],models:[...store.models.values()],motors:[...store.motors.values()],configurations:[...store.configurations.values()],dimensions:[...store.dimensions.values()],curves:[...store.curves.values()],rules:[...store.rules.values()]},engineering:engineering?{options:Object.fromEntries([...engineering.options.entries()].map(([kind,map])=>[kind,[...map.values()]])),links:[...engineering.links.entries()]}:undefined,audit:store.audit};
   const location=join(directory,id+".json");const text=JSON.stringify(payload);const checksum=createHash("sha256").update(text).digest("hex");
   await writeFile(location,text,"utf8");
   record.status="completed";record.completedAt=new Date().toISOString();record.location=location;record.checksum=checksum;
@@ -26,8 +27,8 @@ export async function readCatalogBackup(fileName:string,directory=process.env.BA
  return JSON.parse(await readFile(join(directory,fileName),"utf8"));
 }
 
-export async function restoreCatalogBackup(store:CatalogStore,backup:any){
- if(!backup||!([1,2] as number[]).includes(backup.version)||!backup.catalog)throw new Error("Invalid catalog backup");
+export async function restoreCatalogBackup(store:CatalogStore,backup:any,engineering?:EngineeringOptionStore){
+ if(!backup||!([1,2,3] as number[]).includes(backup.version)||!backup.catalog)throw new Error("Invalid catalog backup");
  const required=["series","models","motors","configurations","dimensions","curves","rules"];
  for(const key of required)if(!Array.isArray(backup.catalog[key]))throw new Error("Invalid backup catalog."+key);
  const snapshot=backup.catalog;
@@ -38,6 +39,6 @@ export async function restoreCatalogBackup(store:CatalogStore,backup:any){
  store.dimensions=new Map(snapshot.dimensions.map((x:any)=>[x.id,x]));
  store.curves=new Map(snapshot.curves.map((x:any)=>[x.id,x])); store.rules=new Map(snapshot.rules.map((x:any)=>[x.id,x]));
  if(Array.isArray(backup.audit))store.audit=backup.audit;
- if(store.pool){await restoreCatalogToDatabase(store,snapshot);await loadCatalog(store)}
+ if(store.pool){await restoreCatalogToDatabase(store,snapshot,engineering);await loadCatalog(store)}
  return {restoredAt:new Date().toISOString(),counts:Object.fromEntries(required.map(k=>[k,snapshot[k].length]))};
 }
