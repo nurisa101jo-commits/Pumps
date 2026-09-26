@@ -12,7 +12,7 @@ const webPort=4174;
 function startApi(){
  const server=join(process.resourcesPath,"api","server.js");
  if(!existsSync(server))throw new Error("Packaged API was not found");
- api=spawn(process.execPath,[server],{env:{...process.env,ELECTRON_RUN_AS_NODE:"1",PORT:String(apiPort),AUTH_REQUIRED:process.env.AUTH_REQUIRED??"true"},stdio:"ignore",windowsHide:true});
+ api=spawn(process.execPath,[server],{env:{...process.env,ELECTRON_RUN_AS_NODE:"1",PORT:String(apiPort),AUTH_REQUIRED:process.env.AUTH_REQUIRED??"true",MIGRATIONS_DIR:join(process.resourcesPath,"api","migrations")},stdio:"ignore",windowsHide:true});
 }
 async function waitForApi(){
  const deadline=Date.now()+30000;
