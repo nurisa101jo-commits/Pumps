@@ -36,7 +36,7 @@ function Curve({config,points}:{config:Config;points:DutyPoint[]}){
 
 
 function CurveMetric({config,kind}:{config:Config;kind:"efficiency"|"power"|"npsh"}){const curve=config.curves.find(x=>x.kind===kind);if(!curve||curve.points.length<2)return null;const sorted=[...curve.points].sort((a,b)=>a.q-b.q);const maxQ=Math.max(...sorted.map(p=>p.q),1);const maxV=Math.max(...sorted.map(p=>p.value),1);const width=640,height=180;const line=sorted.map(p=>`${(p.q/maxQ)*width},${height-(p.value/maxV)*height}`).join(" ");return <div className="curve"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={kind+" curve"}><polyline points={line} fill="none" stroke="currentColor" strokeWidth="4"/></svg><div>{kind} • {curve.unit} • {curve.speedRpm} rpm • {curve.frequencyHz} Hz</div></div>}
-\nfunction App(){
+function App(){
  const[step,setStep]=useState(1);
  const[loading,setLoading]=useState(true);
  const[error,setError]=useState("");
