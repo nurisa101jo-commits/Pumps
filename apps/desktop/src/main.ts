@@ -12,21 +12,22 @@ const webPort=4174;
 function startApi(){
  const server=join(process.resourcesPath,"api","server.js");
  if(!existsSync(server))throw new Error("Packaged API was not found");
- api=spawn(process.execPath,[server],{env:{...process.env,ELECTRON_RUN_AS_NODE:"1",PORT:String(apiPort),AUTH_REQUIRED:process.env.AUTH_REQUIRED??"true",MIGRATIONS_DIR:join(process.resourcesPath,"api","migrations")},stdio:"ignore",windowsHide:true});
+ api=spawn(process.execPath,[server],{env:{...process.env,ELECTRON_RUN_AS_NODE:"1",PORT:String(apiPort),HOST:"127.0.0.1",AUTH_REQUIRED:"false",MIGRATIONS_DIR:join(process.resourcesPath,"api","migrations")},stdio:"ignore",windowsHide:true});
 }
-function monitorApi(){
- void (async()=>{
-  for(let attempt=0;attempt<120;attempt++){
-   try{const response=await fetch(`http://127.0.0.1:${apiPort}/health`);if(response.ok)return;}catch{}
-   await new Promise(r=>setTimeout(r,500));
-  }
- })();
+async function waitForApi(){
+ for(let attempt=0;attempt<120;attempt++){
+  try{const response=await fetch(`http://127.0.0.1:${apiPort}/health`);if(response.ok)return;}
+  catch{}
+  if(api?.exitCode!==null&&api?.exitCode!==undefined)throw new Error(`Local API exited with code ${api.exitCode}`);
+  await new Promise(r=>setTimeout(r,500));
+ }
+ throw new Error("Local API did not become ready within 60 seconds");
 }
 function startWeb(){
  const root=join(process.resourcesPath,"selection");
  local=createServer(async(req,res)=>{
   const path=(req.url??"/").split("?")[0];
-  const safe=path===" /" ? "/index.html" : (path==="/"?"/index.html":path);
+  const safe=path==="/"?"/index.html":path;
   const file=join(root,safe.replace(/^\//,""));
   const fallback=join(root,"index.html");
   const target=existsSync(file)?file:fallback;
