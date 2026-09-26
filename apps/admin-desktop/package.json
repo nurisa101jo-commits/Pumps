@@ -19,6 +19,17 @@
     "esbuild":"^0.28.2",
     "electron":"^38.2.0"
   },
+  "build":{
+    "appId":"com.company.pumps.admin",
+    "productName":"Pumps Admin",
+    "directories":{"output":"release"},
+    "files":["dist/main.js","package.json"],
+    "extraResources":[
+      {"from":"dist/api/server.js","to":"api/server.js"},
+      {"from":"dist/api/migrations","to":"api/migrations"},
+      {"from":"dist/admin","to":"admin"}
+    ]
+  },
   "description":"Pumps Platform Administration Portal",
   "author":"Company Pumps Platform"
 }
