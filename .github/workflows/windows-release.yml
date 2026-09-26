@@ -38,7 +38,13 @@ jobs:
           path: apps/desktop/release/*
           if-no-files-found: error
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v1.0.0
+          name: Pumps Platform 1.0.0
+          body: |
+            First complete Windows release of Pumps Platform.
+
+            Includes the Customer Selection Portal, Engineering Admin Portal, hydraulic selection engine, AI-assisted ingestion, catalog/rules management, backups, audit, and Windows desktop packaging.
           files: apps/desktop/release/*
