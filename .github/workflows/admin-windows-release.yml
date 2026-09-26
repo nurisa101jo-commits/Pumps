@@ -3,37 +3,37 @@ permissions:
   contents: write
 on:
   push:
-    branches:["main"]
+    branches: ["main"]
   workflow_dispatch:
 jobs:
   admin:
     runs-on: windows-latest
     concurrency:
       group: pumps-admin-windows-release
-      cancel-in-progress:false
+      cancel-in-progress: false
     steps:
-      - uses:actions/checkout@v5
-      - uses:pnpm/action-setup@v6
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version:10.15.0
-      - uses:actions/setup-node@v5
+          version: 10.15.0
+      - uses: actions/setup-node@v5
         with:
-          node-version:22
-          package-manager-cache:false
-      - run:pnpm install --no-frozen-lockfile
-      - run:pnpm -r build
-      - run:pnpm --filter @pumps/admin-desktop build
-      - run:pnpm --filter @pumps/admin-desktop package
-      - uses:actions/upload-artifact@v4
+          node-version: 22
+          package-manager-cache: false
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm -r build
+      - run: pnpm --filter @pumps/admin-desktop build
+      - run: pnpm --filter @pumps/admin-desktop package
+      - uses: actions/upload-artifact@v4
         with:
-          name:pumps-admin-windows
-          path:apps/admin-desktop/release/*
-          if-no-files-found:error
-      - name:Publish Admin GitHub release
-        uses:softprops/action-gh-release@v2
+          name: pumps-admin-windows
+          path: apps/admin-desktop/release/*
+          if-no-files-found: error
+      - name: Publish Admin GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name:v1.0.1-admin
-          name:Pumps Admin 1.0.1
-          body:Pumps Platform Admin Windows application. This is the internal administration portal for managing pump catalog data, AI review, engineering configurations, and publishing to the customer Selection Portal.
-          files:apps/admin-desktop/release/*
-          overwrite_files:true
+          tag_name: v1.0.1-admin
+          name: Pumps Admin 1.0.1
+          body: Pumps Platform Admin Windows application.
+          files: apps/admin-desktop/release/*
+          overwrite_files: true
