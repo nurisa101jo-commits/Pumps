@@ -1,5 +1,5 @@
 import type {FastifyInstance} from "fastify";
-import {createProjectStore,loadProjects,createProject,addDutyPoint,selectConfiguration} from "@pumps/db/project-service";
+import {createProjectStore,loadProjects,createProject,addDutyPoint,replaceDutyPoints,selectConfiguration} from "@pumps/db/project-service";
 import type {Project,ProjectDutyPoint,ProjectSelection} from "@pumps/domain/project";
 import {selectFromCatalog} from "@pumps/selection-engine";
 import type {CatalogConfiguration} from "@pumps/selection-engine";
@@ -26,6 +26,13 @@ export function registerProjectRoutes(app:FastifyInstance,store=createProjectSto
       const point:ProjectDutyPoint={id:makeId(),projectId,...(req.body as any)};
       return reply.code(201).send(await addDutyPoint(store,point));
     }catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid duty point"})}
+  });
+  app.put("/api/v1/projects/:projectId/duty-points",async(req,reply)=>{
+    try{
+      const projectId=(req.params as any).projectId;
+      const points=Array.isArray((req.body as any)?.points)?(req.body as any).points:(req.body as any);
+      return reply.send(await replaceDutyPoints(store,projectId,points));
+    }catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid duty points"})}
   });
   app.get("/api/v1/projects/:projectId/selection-sheet",async(req,reply)=>{
     const projectId=(req.params as any).projectId;
