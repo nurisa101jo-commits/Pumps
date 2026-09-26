@@ -14,6 +14,7 @@ import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/docu
 import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,updateCandidate,approveCandidate} from "@pumps/db/ingestion-service";
 import {createPublicationStore,loadPublications,publishCandidate} from "@pumps/db/publication-service";
 import {createCatalogBackup,listCatalogBackups,readCatalogBackup,restoreCatalogBackup} from "@pumps/db/backup-service";
+import {recordAudit} from "@pumps/db/catalog-service";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -52,7 +53,7 @@ app.post("/api/v1/documents/:documentId/references",async(req,reply)=>{try{retur
 app.post("/api/v1/backups",async(req,reply)=>{try{return reply.code(201).send(await createCatalogBackup(catalogStore,((req.body as any)?.type==="automatic"?"automatic":"manual")))}catch(e){return reply.code(500).send({error:e instanceof Error?e.message:"Backup failed"})}});
  app.get("/api/v1/backups",async()=>listCatalogBackups());
  app.get("/api/v1/backups/:file",async(req,reply)=>{try{return reply.send(await readCatalogBackup((req.params as any).file))}catch(e){return reply.code(404).send({error:e instanceof Error?e.message:"Backup not found"})}});
- app.post("/api/v1/backups/:file/restore",async(req,reply)=>{try{return reply.send(await restoreCatalogBackup(catalogStore,await readCatalogBackup((req.params as any).file)))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Restore failed"})}});
+ app.post("/api/v1/backups/:file/restore",async(req,reply)=>{try{const result=await restoreCatalogBackup(catalogStore,await readCatalogBackup((req.params as any).file));recordAudit(catalogStore,{id:crypto.randomUUID(),entityType:"catalog",entityId:"catalog",action:"restore",actorId:(req.body as any)?.actorId??"system",timestamp:new Date().toISOString(),metadata:{file:(req.params as any).file}});return reply.send(result)}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Restore failed"})}});
  app.get("/api/v1/catalog/status",async()=>({status:"ready",source:pool?"postgresql":"memory",catalogLoaded:catalogStore.configurations.size>0,series:catalogStore.series.size,models:catalogStore.models.size,configurations:catalogStore.configurations.size}));
  app.post("/api/v1/selections/preview",async(request,reply)=>reply.send(selectionEngine.select(request.body as any)));
  app.post("/api/v1/selections/run",async(request,reply)=>{const body=request.body as any;const catalog=[...catalogStore.configurations.values()].map(c=>({id:c.id,modelId:c.modelId,motorId:c.motorId,motor:catalogStore.motors.get(c.motorId),optionIds:Object.fromEntries((engineeringStore.links.get(c.id)??[]).map(link=>[link.kind,[...(engineeringStore.links.get(c.id)??[]).filter(x=>x.kind===link.kind).map(x=>x.optionId)]])),rules:[...catalogStore.rules.values()].filter(rule=>rule.enabled&&(!rule.configurationIds||rule.configurationIds.includes(c.id))),curves:[...catalogStore.curves.values()].filter(x=>x.configurationId===c.id)}));return reply.send(selectFromCatalog(body.request??body,catalog))});
