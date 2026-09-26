@@ -9,7 +9,7 @@ type Model={id:string;seriesId:string;code:string;name:string};
 type CurvePoint={q:number;value:number};
 type Curve={id:string;kind:"head"|"efficiency"|"power"|"npsh";unit:string;speedRpm:number;frequencyHz:number;points:CurvePoint[]};
 type Option={id:string;kind:"material"|"seal"|"connection"|"impeller"|"accessory";code:string;name:string};
-type Config={id:string;code:string;modelId:string;model?:Model|null;motor?:{id:string;powerKw:number;voltageV?:number;phase?:number;frequencyHz?:number;speedRpm?:number}|null;dimensions?:{lengthMm?:number;widthMm?:number;heightMm?:number;weightKg?:number}|null;seal?:string;connection?:string;materials?:Record<string,string>;options?:Option[];curves:Curve[]};
+type Config={id:string;code:string;modelId:string;imageUrl?:string;application?:string;description?:string;model?:Model|null;motor?:{id:string;powerKw:number;voltageV?:number;phase?:number;frequencyHz?:number;speedRpm?:number}|null;dimensions?:{lengthMm?:number;widthMm?:number;heightMm?:number;weightKg?:number}|null;seal?:string;connection?:string;materials?:Record<string,string>;options?:Option[];curves:Curve[]};
 type DutyPoint={q:number;head:number;label?:string};
 
 async function get<T>(path:string):Promise<T>{const response=await fetch(API+path);if(!response.ok)throw new Error(await response.text());return response.json()}
@@ -106,7 +106,7 @@ function CurveMetric({config,kind}:{config:Config;kind:"efficiency"|"power"|"nps
     <label>Pump Series<select value={selectedSeries} onChange={event=>setSelectedSeries(event.target.value)}>{series.map(item=><option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></label>
     <label>Pump Model<select value={selectedModel} onChange={event=>setSelectedModel(event.target.value)}>{models.map(item=><option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></label>
    </div>
-   <div className="grid">{configs.map(config=><button key={config.id} className={"card "+(configId===config.id?"selected":"")} onClick={()=>{setConfigId(config.id);setStep(3)}}><div className="pumpImage">PUMP</div><h3>{config.model?.name??config.code}</h3><p>{config.code}</p><small>{config.motor?config.motor.powerKw+" kW":""} {config.options?.length?"• "+config.options.length+" valid options":""}</small></button>)}</div>
+   <div className="grid">{configs.map(config=><button key={config.id} className={"card "+(configId===config.id?"selected":"")} onClick={()=>{setConfigId(config.id);setStep(3)}}><div className="pumpImage">{config.imageUrl?<img src={config.imageUrl} alt={config.code}/>:<span aria-hidden="true">PUMP</span>}</div><h3>{config.model?.name??config.code}</h3><p>{config.code}</p>{config.application&&<small>{config.application}</small>}<small>{config.motor?config.motor.powerKw+" kW":""} {config.options?.length?"• "+config.options.length+" valid options":""}</small></button>)}</div>
    {configs.length===0&&<p className="note">No valid configurations are available for this model.</p>}
   </section>}
 
