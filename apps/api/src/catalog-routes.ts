@@ -5,7 +5,8 @@ import {createEngineeringOption,linkConfigurationOption,type EngineeringOptionSt
 import type {EngineeringOptionKind} from "@pumps/domain/configuration-options";
 import type {CatalogStore} from "@pumps/db/catalog-service";
 const makeId=()=>crypto.randomUUID();
-function enrichConfiguration(store:CatalogStore,engineeringStore:EngineeringOptionStore|undefined,x:any){const links=engineeringStore?.links.get(x.id)??[];const options=links.map(link=>engineeringStore?.options.get(link.kind)?.get(link.optionId)).filter(Boolean);return{...x,model:store.models.get(x.modelId)??null,motor:store.motors.get(x.motorId)??null,dimensions:[...store.dimensions.values()].find(d=>d.configurationId===x.id)??null,curves:[...store.curves.values()].filter(c=>c.configurationId===x.id),options}}\nexport function registerCatalogRoutes(app:FastifyInstance,store:CatalogStore,engineeringStore?:EngineeringOptionStore){
+function enrichConfiguration(store:CatalogStore,engineeringStore:EngineeringOptionStore|undefined,x:any){const links=engineeringStore?.links.get(x.id)??[];const options=links.map(link=>engineeringStore?.options.get(link.kind)?.get(link.optionId)).filter(Boolean);return{...x,model:store.models.get(x.modelId)??null,motor:store.motors.get(x.motorId)??null,dimensions:[...store.dimensions.values()].find(d=>d.configurationId===x.id)??null,curves:[...store.curves.values()].filter(c=>c.configurationId===x.id),options}}
+export function registerCatalogRoutes(app:FastifyInstance,store:CatalogStore,engineeringStore?:EngineeringOptionStore){
 
 
 app.get("/api/v1/rules",async()=>[...store.rules.values()]);
