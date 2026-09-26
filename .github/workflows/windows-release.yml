@@ -1,4 +1,6 @@
 name: Windows Release
+permissions:
+  contents: write
 on:
   push:
     branches: ["main"]
@@ -20,6 +22,16 @@ jobs:
       - run: pnpm -r build
       - run: pnpm --filter @pumps/desktop build
       - run: pnpm --filter @pumps/desktop package
+      - name: Tag 1.0.0 release
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git rev-parse v1.0.0 >/dev/null 2>&1; then
+            git tag -a v1.0.0 "$GITHUB_SHA" -m "Pumps Platform 1.0.0"
+            git push origin v1.0.0
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: pumps-platform-windows
