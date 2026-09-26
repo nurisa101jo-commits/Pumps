@@ -66,7 +66,8 @@ function App(){
  }
  async function saveDutyPoints(){
   const id=await ensureProject();
-  for(const point of dutyPoints)await post("/api/v1/projects/"+id+"/duty-points",point);
+  const response=await fetch(API+"/api/v1/projects/"+id+"/duty-points",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(dutyPoints)});
+  if(!response.ok)throw new Error(await response.text());
   return id;
  }
  async function runSelection(){
