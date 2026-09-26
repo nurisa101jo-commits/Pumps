@@ -1,6 +1,6 @@
 import type {Pool} from "pg";
 import {randomUUID} from "node:crypto";
-import {persistCatalogItem,recordAudit,type CatalogStore} from "./catalog-service";
+import {persistCatalogItem,recordAuditPersistent,type CatalogStore} from "./catalog-service";
 import type {IngestionStore} from "./ingestion-service";
 import type {SourceReference} from "@pumps/domain/source";
 import type {DocumentStore} from "./document-service";
@@ -85,7 +85,7 @@ async function publishCatalogPayload(ingestion:IngestionStore,catalog:CatalogSto
    await client.query("COMMIT");
   }catch(e){catalog.series=original.series;catalog.models=original.models;catalog.motors=original.motors;catalog.configurations=original.configurations;catalog.dimensions=original.dimensions;catalog.curves=original.curves;await client.query("ROLLBACK");throw e}finally{client.release()}
  }
- recordAudit(catalog,{id:randomUUID(),entityType:"pump_series",entityId:series.id,action:"publish_catalog_from_ingestion",actorId:publishedBy,timestamp:new Date().toISOString(),after:created});
+ await recordAuditPersistent(catalog,{id:randomUUID(),entityType:"pump_series",entityId:series.id,action:"publish_catalog_from_ingestion",actorId:publishedBy,timestamp:new Date().toISOString(),after:created});
  return created;
 }
 
@@ -107,5 +107,5 @@ export async function publishCandidate(ingestion:IngestionStore,publication:Publ
  await persistCatalogItem(catalog,kind,payload);
  const item={id,candidateId,approvedRecordId:approval.id,publishedBy:input.publishedBy,publishedAt:new Date().toISOString(),entityType:input.entityType,entityId:id,createdEntity:!input.entityId,payload};
  if(publication.pool)await publication.pool.query("INSERT INTO ingestion_publications(id,candidate_id,approved_record_id,published_by,published_at,entity_type,entity_id,created_entity,payload_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[id,candidateId,approval.id,item.publishedBy,item.publishedAt,item.entityType,item.entityId,item.createdEntity,JSON.stringify(c.payload)]);
- publication.publications.set(id,item);recordAudit(catalog,{id:randomUUID(),entityType:item.entityType,entityId:item.entityId,action:"publish_from_ingestion",actorId:input.publishedBy,timestamp:item.publishedAt,after:payload});return item;
+ publication.publications.set(id,item);await recordAuditPersistent(catalog,{id:randomUUID(),entityType:item.entityType,entityId:item.entityId,action:"publish_from_ingestion",actorId:input.publishedBy,timestamp:item.publishedAt,after:payload});return item;
 }
