@@ -15,7 +15,7 @@ import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/docu
 import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,updateCandidate,approveCandidate} from "@pumps/db/ingestion-service";
 import {createPublicationStore,loadPublications,publishCandidate} from "@pumps/db/publication-service";
 import {createCatalogBackup,listCatalogBackups,readCatalogBackup,restoreCatalogBackup} from "@pumps/db/backup-service";
-import {persistReversibleStateAndAudit,undoLastAudit,redoLastAudit} from "@pumps/db/catalog-service";
+import {recordAuditPersistent,persistReversibleStateAndAudit,undoLastAudit,redoLastAudit} from "@pumps/db/catalog-service";
 import {seedDemoCatalog} from "@pumps/db/demo-seed";
 
 const app=Fastify({logger:true});
