@@ -14,7 +14,7 @@ import {createDocumentStore,loadDocuments,linkEntitySource} from "@pumps/db/docu
 import {createIngestionStore,loadIngestion,createIngestionJob,createCandidate,updateCandidate,approveCandidate} from "@pumps/db/ingestion-service";
 import {createPublicationStore,loadPublications,publishCandidate} from "@pumps/db/publication-service";
 import {createCatalogBackup,listCatalogBackups,readCatalogBackup,restoreCatalogBackup} from "@pumps/db/backup-service";
-import {recordAuditPersistent} from "@pumps/db/catalog-service";
+import {recordAuditPersistent,undoLastAudit,redoLastAudit} from "@pumps/db/catalog-service";
 
 const app=Fastify({logger:true});
 const pool=process.env.DATABASE_URL?createPool():undefined;
@@ -51,6 +51,9 @@ app.post("/api/v1/documents",async(request,reply)=>{try{const x=request.body as 
 app.get("/api/v1/documents/:documentId/references",async(req)=>[...documentStore.references.values()].filter(x=>x.documentId===(req.params as any).documentId));
 app.post("/api/v1/documents/:documentId/references",async(req,reply)=>{try{return reply.code(201).send(await (await import("@pumps/db/document-service")).createSourceReference(documentStore,{documentId:(req.params as any).documentId,...(req.body as any)}))}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Invalid source reference"})}});
 app.post("/api/v1/backups",async(req,reply)=>{try{return reply.code(201).send(await createCatalogBackup(catalogStore,((req.body as any)?.type==="automatic"?"automatic":"manual")))}catch(e){return reply.code(500).send({error:e instanceof Error?e.message:"Backup failed"})}});
+ app.get("/api/v1/audit",async()=>catalogStore.audit.slice().reverse());
+ app.post("/api/v1/catalog/:entityType/:entityId/undo",async(req,reply)=>{try{const p=req.params as any;const event=undoLastAudit(catalogStore,p.entityType,p.entityId);return reply.send({ok:true,event})}catch(e){return reply.code(409).send({error:e instanceof Error?e.message:"Undo failed"})}});
+ app.post("/api/v1/catalog/:entityType/:entityId/redo",async(req,reply)=>{try{const p=req.params as any;const event=redoLastAudit(catalogStore,p.entityType,p.entityId);return reply.send({ok:true,event})}catch(e){return reply.code(409).send({error:e instanceof Error?e.message:"Redo failed"})}});
  app.get("/api/v1/backups",async()=>listCatalogBackups());
  app.get("/api/v1/backups/:file",async(req,reply)=>{try{return reply.send(await readCatalogBackup((req.params as any).file))}catch(e){return reply.code(404).send({error:e instanceof Error?e.message:"Backup not found"})}});
  app.post("/api/v1/backups/:file/restore",async(req,reply)=>{try{const result=await restoreCatalogBackup(catalogStore,await readCatalogBackup((req.params as any).file));recordAuditPersistent(catalogStore,{id:crypto.randomUUID(),entityType:"catalog",entityId:"catalog",action:"restore",actorId:(req.body as any)?.actorId??"system",timestamp:new Date().toISOString(),metadata:{file:(req.params as any).file}});return reply.send(result)}catch(e){return reply.code(400).send({error:e instanceof Error?e.message:"Restore failed"})}});
