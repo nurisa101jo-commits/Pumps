@@ -10,7 +10,6 @@
     "dist": "electron-builder --win"
   },
   "dependencies": {
-    "electron": "^38.2.0",
     "@pumps/admin": "workspace:*",
     "@pumps/selection": "workspace:*",
     "@pumps/api": "workspace:*",
@@ -19,6 +18,9 @@
   "devDependencies": {
     "electron-builder": "^26.0.12",
     "typescript": "^5.9.2",
-    "esbuild": "^0.28.2"
-  }
+    "esbuild": "^0.28.2",
+    "electron": "^38.2.0"
+  },
+  "description": "Company pump selection and product configuration platform",
+  "author": "Company Pumps Platform"
 }
